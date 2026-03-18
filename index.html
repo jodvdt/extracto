@@ -699,89 +699,152 @@ https://anysite.com/product/item-two"></textarea>
   }
 
   // ── Studio Shoot generation ───────────────────────────────────────────────
+  // ── Studio Shoot — client-side canvas compositing ────────────────────────
   async function runStudioShoot() {
-    const key = getGeminiKey();
-    if (!key) { toggleSettings(); showToast('Add your Gemini API key first'); return; }
-    if (!extractedImageUrls.length) { showToast('No product images to use — run Let\'s go first'); return; }
+    if (!extractedImageUrls.length) { showToast("No product images — run Let's go first"); return; }
 
-    const prompt = document.getElementById('studio-prompt').value.trim();
-    const btn    = document.getElementById('studio-generate-btn');
+    const btn = document.getElementById('studio-generate-btn');
     btn.disabled = true;
-
     document.getElementById('studio-loading').classList.remove('hidden');
     document.getElementById('studio-result').classList.add('hidden');
-    setStatus('studio', 'Generating studio shot with Gemini AI...');
-    logLine('gemini','tag-ai','Sending product images to Gemini for studio compositing...');
+    setStatus('studio', 'Rendering studio shot...');
+    logLine('studio','tag-ai','Compositing backdrop, shadows and reflections...');
 
     try {
-      // Build the parts array — all product images + prompt
-      const parts = [];
-
-      // Add each product image as base64
-      for (let i=0; i<extractedImageUrls.length; i++) {
-        const base64 = extractedImageUrls[i].split(',')[1];
-        parts.push({
-          inline_data: {
-            mime_type: 'image/png',
-            data: base64
-          }
-        });
-        parts.push({ text: `Product ${i+1} (transparent background PNG)` });
-      }
-
-      parts.push({
-        text: `Create a single professional studio product photograph featuring all ${extractedImageUrls.length} product${extractedImageUrls.length!==1?'s':''} shown above. ${prompt}. Make it look like a real commercial product shoot.`
-      });
-
-      const response = await fetch(
-        `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-exp:generateContent?key=${key}`,
-        {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            contents: [{ parts }],
-            generationConfig: { responseModalities: ['TEXT', 'IMAGE'] }
-          })
-        }
-      );
-
-      const data = await response.json();
-
-      if (data.error) {
-        throw new Error(data.error.message || 'Gemini API error');
-      }
-
-      // Find the image part in the response
-      const candidates = data.candidates || [];
-      let imageData = null;
-
-      for (const candidate of candidates) {
-        for (const part of (candidate.content?.parts || [])) {
-          if (part.inline_data?.mime_type?.startsWith('image/')) {
-            imageData = `data:${part.inline_data.mime_type};base64,${part.inline_data.data}`;
-            break;
-          }
-        }
-        if (imageData) break;
-      }
-
-      if (!imageData) throw new Error('No image returned from Gemini');
-
-      logLine('gemini','tag-ok','Studio shot generated successfully');
-      document.getElementById('studio-output-img').src = imageData;
+      const styleVal = document.getElementById('studio-style').value;
+      const result   = await renderStudioShot(extractedImageUrls, styleVal);
+      document.getElementById('studio-output-img').src = result;
       document.getElementById('studio-result').classList.remove('hidden');
+      logLine('studio','tag-ok','Studio shot ready');
       setStatus('done', 'Studio shot ready');
-
     } catch(err) {
-      logLine('gemini','tag-fail',`Generation failed: ${err.message}`);
-      setStatus('error', `Generation failed — ${err.message}`);
+      logLine('studio','tag-fail', `Render failed: ${err.message}`);
+      setStatus('error', `Render failed — ${err.message}`);
     } finally {
       document.getElementById('studio-loading').classList.add('hidden');
       btn.disabled = false;
     }
   }
 
-  function setStudioMode(mode) {
+  async function renderStudioShot(imageUrls, style) {
+    const W = 1400, H = 1050;
+    const c = document.createElement('canvas');
+    c.width = W; c.height = H;
+    const ctx = c.getContext('2d');
+
+    const styles = {
+      white:    { bg: ['#ffffff','#e8e8e8'], floor: '#f0f0f0', shadow: 'rgba(0,0,0,0.18)',      refl: 0.13, vig: 'rgba(180,180,180,0.3)' },
+      warm:     { bg: ['#fdf6ee','#e8d5b8'], floor: '#ede0cc', shadow: 'rgba(80,40,0,0.15)',    refl: 0.10, vig: 'rgba(160,110,60,0.25)' },
+      dark:     { bg: ['#1a1a1a','#0a0a0a'], floor: '#111111', shadow: 'rgba(0,0,0,0.7)',       refl: 0.18, vig: 'rgba(0,0,0,0.55)' },
+      gradient: { bg: ['#e8f0fe','#c2d4f8'], floor: '#d0e0fa', shadow: 'rgba(30,60,140,0.15)', refl: 0.12, vig: 'rgba(80,120,220,0.2)' },
+    };
+    const s = styles[style] || styles.white;
+    const floorY = H * 0.62;
+
+    // Backdrop
+    const bgGrad = ctx.createLinearGradient(0, 0, 0, H);
+    bgGrad.addColorStop(0, s.bg[0]);
+    bgGrad.addColorStop(1, s.bg[1]);
+    ctx.fillStyle = bgGrad;
+    ctx.fillRect(0, 0, W, H);
+
+    // Swept floor
+    const floorGrad = ctx.createLinearGradient(0, floorY - 60, 0, H);
+    floorGrad.addColorStop(0, s.bg[1]);
+    floorGrad.addColorStop(0.2, s.floor);
+    floorGrad.addColorStop(1, s.floor);
+    ctx.fillStyle = floorGrad;
+    ctx.beginPath();
+    ctx.moveTo(0, H); ctx.lineTo(W, H); ctx.lineTo(W, floorY + 20);
+    ctx.bezierCurveTo(W * 0.75, floorY - 30, W * 0.25, floorY - 30, 0, floorY + 20);
+    ctx.closePath();
+    ctx.fill();
+
+    // Load images
+    const imgs = await Promise.all(imageUrls.map(src => new Promise(res => {
+      const img = new Image();
+      img.crossOrigin = 'anonymous';
+      img.onload = () => res(img);
+      img.onerror = () => res(null);
+      img.src = src;
+    })));
+    const valid = imgs.filter(Boolean);
+    if (!valid.length) throw new Error('No images loaded');
+
+    const count  = valid.length;
+    const maxH   = H * 0.52;
+    const padX   = W * 0.08;
+    const slotW  = (W - padX * 2) / count;
+
+    const placements = valid.map((img, i) => {
+      const aspect = img.width / img.height;
+      const pH = maxH * (0.82 + (i % 2 === 0 ? 0.1 : 0));
+      const pW = pH * aspect;
+      const cx = padX + slotW * i + slotW / 2;
+      const cy = floorY;
+      const tilt = (i % 2 === 0 ? 1 : -1) * (Math.random() * 4);
+      return { img, pW, pH, cx, cy, tilt };
+    });
+
+    // Shadows
+    placements.forEach(({ pW, cx, cy }) => {
+      const sGrad = ctx.createRadialGradient(cx, cy + 4, 0, cx, cy + 4, pW * 0.5);
+      sGrad.addColorStop(0, s.shadow);
+      sGrad.addColorStop(1, 'rgba(0,0,0,0)');
+      ctx.fillStyle = sGrad;
+      ctx.beginPath();
+      ctx.ellipse(cx, cy + 4, pW * 0.48, pW * 0.09, 0, 0, Math.PI * 2);
+      ctx.fill();
+    });
+
+    // Reflections
+    for (const { img, pW, pH, cx, cy, tilt } of placements) {
+      ctx.save();
+      ctx.translate(cx, cy);
+      ctx.rotate(tilt * Math.PI / 180);
+      const reflH = pH * 0.3;
+      ctx.save();
+      ctx.scale(1, -1);
+      ctx.globalAlpha = s.refl;
+      ctx.drawImage(img, -pW/2, -reflH * 0.3, pW, reflH);
+      ctx.globalAlpha = 1;
+      // Fade out reflection
+      const rg = ctx.createLinearGradient(0, -reflH, 0, 0);
+      rg.addColorStop(0, 'rgba(255,255,255,0)');
+      rg.addColorStop(1, 'rgba(255,255,255,1)');
+      ctx.globalCompositeOperation = 'destination-out';
+      ctx.fillStyle = rg;
+      ctx.fillRect(-pW/2, -reflH, pW, reflH);
+      ctx.globalCompositeOperation = 'source-over';
+      ctx.restore();
+      ctx.restore();
+    }
+
+    // Products
+    for (const { img, pW, pH, cx, cy, tilt } of placements) {
+      ctx.save();
+      ctx.translate(cx, cy);
+      ctx.rotate(tilt * Math.PI / 180);
+      ctx.drawImage(img, -pW/2, -pH, pW, pH);
+      ctx.restore();
+    }
+
+    // Key light
+    const lg = ctx.createRadialGradient(W*0.3, H*0.1, 0, W*0.3, H*0.1, W*0.75);
+    lg.addColorStop(0, 'rgba(255,255,255,0.13)');
+    lg.addColorStop(1, 'rgba(255,255,255,0)');
+    ctx.fillStyle = lg; ctx.fillRect(0, 0, W, H);
+
+    // Vignette
+    const vg = ctx.createRadialGradient(W/2, H/2, H*0.3, W/2, H/2, W*0.8);
+    vg.addColorStop(0, 'rgba(0,0,0,0)');
+    vg.addColorStop(1, s.vig);
+    ctx.fillStyle = vg; ctx.fillRect(0, 0, W, H);
+
+    return c.toDataURL('image/png');
+  }
+
+    function setStudioMode(mode) {
     studioMode = mode;
     document.getElementById('mode-auto-btn').classList.toggle('active', mode==='auto');
     document.getElementById('mode-canvas-btn').classList.toggle('active', mode==='canvas');
