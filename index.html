@@ -776,13 +776,68 @@ https://anysite.com/product/item-two"></textarea>
     const padX   = W * 0.08;
     const slotW  = (W - padX * 2) / count;
 
+    // Classify images for smart placement if key available
+    let classifications = valid.map(() => 'packshot');
+    const studioKey = getGeminiKey();
+    if (studioKey) {
+      try {
+        classifications = await Promise.all(
+          imageUrls.map(src => classifyImage(src))
+        );
+      } catch(e) {}
+    }
+
+    const dominant = classifications.reduce((acc, t) => {
+      acc[t] = (acc[t]||0)+1; return acc;
+    }, {});
+    const domType = Object.entries(dominant).sort((a,b)=>b[1]-a[1])[0][0];
+
     const placements = valid.map((img, i) => {
       const aspect = img.width / img.height;
-      const pH = maxH * (0.82 + (i % 2 === 0 ? 0.1 : 0));
-      const pW = pH * aspect;
-      const cx = padX + slotW * i + slotW / 2;
-      const cy = floorY;
-      const tilt = (i % 2 === 0 ? 1 : -1) * (Math.random() * 4);
+      const type   = classifications[i] || 'packshot';
+      let pH, pW, cx, cy, tilt;
+
+      // Model full body — tall and slim
+      if (type === 'model_fullbody') {
+        pH   = maxH * 1.05;
+        pW   = pH * Math.min(aspect, 0.6);
+        cx   = padX + slotW * i + slotW / 2;
+        cy   = floorY + pH * 0.02;
+        tilt = (i % 2 === 0 ? 1 : -1) * 1.5;
+      }
+      // Model half body — medium portrait
+      else if (type === 'model_halfbody') {
+        pH   = maxH * 0.88;
+        pW   = pH * Math.min(aspect, 0.72);
+        cx   = padX + slotW * i + slotW / 2 - (i > 0 ? pW * 0.1 : 0);
+        cy   = floorY;
+        tilt = (i % 2 === 0 ? -2 : 2);
+      }
+      // Flat lay — square, overhead feel
+      else if (type === 'flatlay') {
+        pH   = maxH * 0.7;
+        pW   = pH * aspect;
+        cx   = padX + slotW * i + slotW / 2;
+        cy   = floorY - pH * 0.1;
+        tilt = (Math.random() - 0.5) * 10;
+      }
+      // Lifestyle — wider, more horizontal
+      else if (type === 'lifestyle') {
+        pH   = maxH * 0.75;
+        pW   = pH * aspect;
+        cx   = padX + slotW * i + slotW / 2;
+        cy   = floorY;
+        tilt = 0;
+      }
+      // Default packshot
+      else {
+        pH   = maxH * (0.82 + (i % 2 === 0 ? 0.1 : 0));
+        pW   = pH * aspect;
+        cx   = padX + slotW * i + slotW / 2;
+        cy   = floorY;
+        tilt = (i % 2 === 0 ? 1 : -1) * (Math.random() * 4);
+      }
+
       return { img, pW, pH, cx, cy, tilt };
     });
 
@@ -854,17 +909,193 @@ https://anysite.com/product/item-two"></textarea>
   // ── Bundle canvas + transforms ────────────────────────────────────────────
   const canvas = () => document.getElementById('bundle-canvas');
 
-  function renderBundleCanvas() {
+  // ── Image classifier via Gemini Vision (free tier) ───────────────────────
+  async function classifyImage(dataUrl) {
+    const key = getGeminiKey();
+    if (!key) return 'packshot'; // fallback if no key
+
+    try {
+      const base64 = dataUrl.split(',')[1];
+      const res = await fetch(
+        `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${key}`,
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            contents: [{
+              parts: [
+                { inline_data: { mime_type: 'image/png', data: base64 } },
+                { text: 'Classify this product image into exactly one of these categories. Reply with ONLY the category word, nothing else: model_fullbody, model_halfbody, flatlay, packshot, lifestyle' }
+              ]
+            }],
+            generationConfig: { maxOutputTokens: 10 }
+          })
+        }
+      );
+      const data = await res.json();
+      const raw = data.candidates?.[0]?.content?.parts?.[0]?.text?.trim().toLowerCase() || 'packshot';
+      const valid = ['model_fullbody','model_halfbody','flatlay','packshot','lifestyle'];
+      return valid.includes(raw) ? raw : 'packshot';
+    } catch(e) { return 'packshot'; }
+  }
+
+  // ── Smart layout engine ───────────────────────────────────────────────────
+  function smartLayout(items, classifications, canvasW, canvasH) {
+    const types = classifications;
+    const count = items.length;
+    const pad   = canvasW * 0.05;
+
+    // Detect dominant type
+    const typeCounts = {};
+    types.forEach(t => typeCounts[t] = (typeCounts[t]||0)+1);
+    const dominant = Object.entries(typeCounts).sort((a,b)=>b[1]-a[1])[0][0];
+
+    // All models full body — lookbook layout: tall portraits side by side
+    if (dominant === 'model_fullbody') {
+      const slotW = (canvasW - pad*2) / count;
+      items.forEach((item, i) => {
+        const h = canvasH * 0.88;
+        const w = h * 0.55;
+        item.w = Math.min(w, slotW * 0.88);
+        item.h = item.w / 0.55;
+        item.x = pad + slotW * i + (slotW - item.w) / 2;
+        item.y = canvasH * 0.04;
+        item.angle = (i % 2 === 0 ? 1 : -1) * 1.5; // very subtle tilt
+      });
+      return;
+    }
+
+    // Half body / editorial — slight overlap, portrait format
+    if (dominant === 'model_halfbody') {
+      const baseW = (canvasW - pad * 2) / Math.max(count - 0.3, 1);
+      items.forEach((item, i) => {
+        const h = canvasH * 0.78;
+        const w = h * 0.65;
+        item.w = Math.min(w, baseW * 0.9);
+        item.h = item.w / 0.65;
+        item.x = pad + baseW * i - (i > 0 ? item.w * 0.12 : 0); // overlap
+        item.y = canvasH * 0.08 + (i % 2 === 0 ? 0 : canvasH * 0.05);
+        item.angle = (i % 2 === 0 ? -2 : 2);
+      });
+      return;
+    }
+
+    // Flat lay — overhead grid, minimal tilt
+    if (dominant === 'flatlay') {
+      const cols = Math.ceil(Math.sqrt(count));
+      const rows = Math.ceil(count / cols);
+      const cellW = (canvasW - pad * 2) / cols;
+      const cellH = (canvasH - pad * 2) / rows;
+      const sz = Math.min(cellW, cellH) * 0.82;
+      items.forEach((item, i) => {
+        item.w = sz; item.h = sz;
+        item.x = pad + (i % cols) * cellW + (cellW - sz) / 2;
+        item.y = pad + Math.floor(i / cols) * cellH + (cellH - sz) / 2;
+        item.angle = (Math.random() - 0.5) * 8; // slight tilt for flat lays
+      });
+      return;
+    }
+
+    // Lifestyle — hero centre, supporting images flanking
+    if (dominant === 'lifestyle' && count > 1) {
+      // Hero: largest, centred
+      const heroIdx = 0;
+      const heroSz  = canvasH * 0.72;
+      items[heroIdx].w = heroSz * 1.1;
+      items[heroIdx].h = heroSz;
+      items[heroIdx].x = (canvasW - items[heroIdx].w) / 2;
+      items[heroIdx].y = (canvasH - heroSz) / 2;
+      items[heroIdx].angle = 0;
+
+      // Supporting: flank left and right
+      const supporting = items.filter((_, i) => i !== heroIdx);
+      const ssz = heroSz * 0.52;
+      supporting.forEach((item, i) => {
+        item.w = ssz; item.h = ssz;
+        const side = i % 2 === 0 ? -1 : 1;
+        item.x = side === -1
+          ? pad
+          : canvasW - pad - ssz;
+        item.y = canvasH * 0.2 + i * ssz * 0.55;
+        item.angle = side * (3 + Math.random() * 4);
+      });
+      return;
+    }
+
+    // Mixed types — hero centre, rest scattered with context
+    if (Object.keys(typeCounts).length > 1) {
+      // Find if there's a model shot to use as hero
+      const heroIdx = types.findIndex(t => t.startsWith('model')) !== -1
+        ? types.findIndex(t => t.startsWith('model'))
+        : 0;
+
+      const heroSz = Math.min(canvasH * 0.68, canvasW * 0.45);
+      items[heroIdx].w = heroSz * (types[heroIdx] === 'model_fullbody' ? 0.6 : 0.85);
+      items[heroIdx].h = heroSz;
+      items[heroIdx].x = (canvasW - items[heroIdx].w) / 2;
+      items[heroIdx].y = (canvasH - heroSz) / 2 + canvasH * 0.02;
+      items[heroIdx].angle = 0;
+
+      const rest = items.filter((_, i) => i !== heroIdx);
+      const positions = [
+        { x: pad,                        y: pad,                          a: -8  },
+        { x: canvasW - pad - heroSz*0.5, y: pad,                          a:  8  },
+        { x: pad,                        y: canvasH - pad - heroSz * 0.5, a:  6  },
+        { x: canvasW - pad - heroSz*0.5, y: canvasH - pad - heroSz * 0.5, a: -6  },
+        { x: canvasW * 0.4,              y: pad * 0.5,                    a:  4  },
+      ];
+      rest.forEach((item, i) => {
+        const sz = heroSz * 0.42;
+        item.w = sz; item.h = sz;
+        const pos = positions[i % positions.length];
+        item.x = pos.x; item.y = pos.y; item.angle = pos.a;
+      });
+      return;
+    }
+
+    // Default packshot — clean staggered row
+    const slotW = (canvasW - pad * 2) / count;
+    items.forEach((item, i) => {
+      const sz = Math.min(slotW * 0.82, canvasH * 0.58);
+      item.w = sz; item.h = sz;
+      item.x = pad + slotW * i + (slotW - sz) / 2;
+      item.y = canvasH * 0.18 + (i % 2 === 0 ? 0 : canvasH * 0.08);
+      item.angle = (i % 2 === 0 ? -3 : 3);
+    });
+  }
+
+  async function renderBundleCanvas() {
     const c = canvas(); c.innerHTML = '';
     const w = c.offsetWidth, h = c.offsetHeight;
+
+    // Set initial sizes before classification
     bundleItems.forEach(item => {
-      const sz  = Math.max(80, Math.min(180, w / Math.max(bundleItems.length, 2) * 1.5));
+      const sz = Math.max(80, Math.min(160, w / Math.max(bundleItems.length, 2) * 1.4));
       item.w = sz; item.h = sz;
       item.x = 40 + Math.random() * (w - sz - 80);
       item.y = 30 + Math.random() * (h - sz - 60);
-      item.angle = (Math.random()-0.5)*28;
+      item.angle = (Math.random()-0.5)*20;
       mountItem(item);
     });
+
+    // If Gemini key available, classify and re-layout smartly
+    const key = getGeminiKey();
+    if (key && bundleItems.length) {
+      logLine('ai', 'tag-ai', 'Analysing image types for smart layout...');
+      try {
+        const classifications = await Promise.all(
+          bundleItems.map(item => classifyImage(item.src))
+        );
+        logLine('ai', 'tag-ok', `Detected: ${classifications.join(', ')}`);
+        smartLayout(bundleItems, classifications, w, h);
+        bundleItems.forEach(item => {
+          const el = document.getElementById('bi-'+item.id);
+          if (el) applyTransform(el, item);
+        });
+      } catch(e) {
+        // silently fall back to random layout already rendered
+      }
+    }
   }
 
   function mountItem(item) {
