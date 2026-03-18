@@ -323,8 +323,18 @@ https://anysite.com/product/item-two"></textarea>
     </div>
 
     <div class="studio-prompt-wrap">
-      <label class="field-label" for="studio-prompt">Scene prompt</label>
-      <textarea class="studio-prompt" id="studio-prompt">Professional studio product photography, white seamless background, soft box lighting, subtle drop shadows, products arranged naturally together, clean and commercial aesthetic</textarea>
+      <label class="field-label" for="studio-style">Backdrop style</label>
+      <div style="position:relative;margin-bottom:1rem;">
+        <select id="studio-style" style="width:100%;height:40px;background:var(--surface2);border:0.5px solid var(--border2);border-radius:8px;padding:0 36px 0 13px;color:var(--text);font-family:var(--font);font-size:13px;cursor:pointer;appearance:none;-webkit-appearance:none;outline:none;">
+          <option value="white">Clean white — seamless white sweep</option>
+          <option value="warm">Warm natural — cream and sand tones</option>
+          <option value="dark">Dark studio — dramatic black sweep</option>
+          <option value="gradient">Cool gradient — soft blue tones</option>
+        </select>
+        <div style="position:absolute;right:12px;top:50%;transform:translateY(-50%);pointer-events:none;color:var(--muted);">
+          <svg width="11" height="11" viewBox="0 0 11 11" fill="none"><path d="M1.5 3.5L5.5 7.5L9.5 3.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </div>
+      </div>
     </div>
 
     <div id="studio-canvas-note" class="hidden" style="font-size:11px;font-family:'DM Mono',monospace;color:var(--muted);margin-bottom:1rem;padding:8px 12px;background:var(--surface2);border-radius:6px;">
@@ -337,7 +347,7 @@ https://anysite.com/product/item-two"></textarea>
     </button>
 
     <div class="studio-loading hidden" id="studio-loading">
-      <div class="studio-loading-txt">Generating studio shot with Gemini...</div>
+      <div class="studio-loading-txt">Rendering studio shot...</div>
       <div class="shimmer-bar"><div class="shimmer-inner"></div></div>
     </div>
 
@@ -591,11 +601,7 @@ https://anysite.com/product/item-two"></textarea>
     const urls = extractUrls(brief);
     if (!urls.length) { setStatus('error','No product links found — paste at least one URL.'); return; }
 
-    if (mode === 'studio' && !getGeminiKey()) {
-      toggleSettings();
-      showToast('Add your Gemini API key first');
-      return;
-    }
+
 
     document.getElementById('go-btn').disabled = true;
     document.getElementById('extract-results').classList.add('hidden');
