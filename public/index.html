@@ -295,7 +295,7 @@ https://anysite.com/product/item-two"></textarea>
 
 </div>
   <div style="text-align:center;margin-top:3rem;font-size:10px;font-family:'DM Mono',monospace;color:#333;letter-spacing:.5px;">
-    Extracto v1.4 &copy; 2026 Jonas for Devote Digital
+    Extracto v1.5 &copy; 2026 Jonas for Devote Digital
   </div>
 </div>
 
@@ -638,7 +638,7 @@ async function removeBg(imageUrl, tol=40) {
   if (imageUrl.startsWith('/api/image') || imageUrl.startsWith('data:')) {
     try {
       const img = await loadImageCors(imageUrl);
-      return processImageOnCanvas(img);
+      return processImageOnCanvas(img, tol);
     } catch(e) {}
   }
 
@@ -686,27 +686,28 @@ function createCard(label) {
   card.innerHTML = `
     <div class="checker"></div>
     <div class="cbadge">fetching</div>
-    <div class="clbl">${label}</div>
     <div class="card-ov">
-      <div style="width:100%;padding:0 12px 6px;display:flex;align-items:center;gap:6px;">
-        <span style="font-size:9px;font-family:'DM Mono',monospace;color:rgba(200,245,58,0.6);white-space:nowrap;">bg</span>
-        <input type="range" min="0" max="100" value="40" step="1"
-          style="flex:1;cursor:pointer;accent-color:#c8f53a;height:3px;"
-          oninput="document.getElementById('${uid}').textContent=this.value"
-          onchange="reprocessCard(this)">
-        <span id="${uid}" style="font-size:9px;font-family:'DM Mono',monospace;color:#c8f53a;min-width:20px;text-align:right;">40</span>
-      </div>
       <button class="ov-btn" onclick="dlImg(this)">Download PNG</button>
       <button class="ov-btn" onclick="cpImg(this)">Copy</button>
+    </div>
+    <div class="clbl">${label}</div>
+    <div class="tol-bar" style="position:absolute;bottom:24px;left:0;right:0;padding:0 10px;display:none;align-items:center;gap:5px;z-index:5;">
+      <span style="font-size:9px;font-family:'DM Mono',monospace;color:rgba(200,245,58,0.7);white-space:nowrap;">bg</span>
+      <input type="range" min="0" max="100" value="40" step="1"
+        style="flex:1;cursor:pointer;accent-color:#c8f53a;height:3px;"
+        oninput="document.getElementById('${uid}').textContent=this.value"
+        onmouseup="reprocessCard(this)"
+        ontouchend="reprocessCard(this)">
+      <span id="${uid}" style="font-size:9px;font-family:'DM Mono',monospace;color:#c8f53a;min-width:20px;text-align:right;">40</span>
     </div>`;
   return card;
 }
 
 async function reprocessCard(slider) {
   const card = slider.closest('.img-card');
-  if (!card) return;
+  if (!card) { console.warn('No .img-card found from slider'); return; }
   const rawData = card.dataset.rawData;
-  if (!rawData) return;
+  if (!rawData) { console.warn('No rawData on card'); return; }
   const tol = parseInt(slider.value);
   const existingImg = card.querySelector('img');
   if (existingImg) existingImg.style.opacity = '0.3';
@@ -764,8 +765,10 @@ function updateCard(card, imgUrl, state, rawData) {
     const im=document.createElement('img');im.src=imgUrl;
     card.insertBefore(im,card.querySelector('.card-ov'));
     card.dataset.src=imgUrl;
-    // Store raw (pre-BG-removal) image data for slider reprocessing
     if(rawData) card.dataset.rawData=rawData;
+    // Show slider
+    const bar=card.querySelector('.tol-bar');
+    if(bar) bar.style.display='flex';
   } else if(state==='error') {
     if(badge){badge.className='cbadge fail';badge.textContent='failed';}
     const ov=card.querySelector('.card-ov');if(ov)ov.remove();
