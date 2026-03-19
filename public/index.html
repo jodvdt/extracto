@@ -315,7 +315,7 @@ https://anysite.com/product/item-two"></textarea>
 
 </div>
   <div style="text-align:center;margin-top:3rem;font-size:10px;font-family:'DM Mono',monospace;color:#333;letter-spacing:.5px;">
-    Extracto v2.6 &mdash; brewed by Jonas for Devote Digital</div>
+    Extracto v2.7 &mdash; brewed by Jonas for Devote Digital</div>
 </div>
 
 <script>
@@ -1303,88 +1303,108 @@ function d3ForceLayout(items, W, H) {
   if (!items.length) return;
   const count = items.length;
 
-  // Size items first -- hero biggest, others scaled down
-  const heroSz = Math.min(W * 0.38, H * 0.62);
-  items.forEach((item, i) => {
-    const scale = i === 0 ? 1 : 0.42 + Math.random() * 0.22;
+  // Detect hero -- use the item whose image has the largest rendered area
+  // Load images to measure natural dimensions, fallback to index 0
+  const heroIdx = (() => {
+    let best = 0, bestScore = 0;
+    items.forEach((item, i) => {
+      const el = document.getElementById('bi-'+item.id);
+      const img = el?.querySelector('img');
+      if (img && img.naturalWidth && img.naturalHeight) {
+        const score = img.naturalWidth * img.naturalHeight;
+        if (score > bestScore) { bestScore = score; best = i; }
+      }
+    });
+    return best;
+  })();
+
+  // Move hero to front of array temporarily for layout
+  const ordered = [items[heroIdx], ...items.filter((_,i) => i !== heroIdx)];
+
+  // Size items -- hero dominant, others varied
+  const heroSz = Math.min(W * 0.44, H * 0.68);
+  ordered.forEach((item, i) => {
+    const scale = i === 0 ? 1 : 0.38 + (i % 3) * 0.08 + Math.random() * 0.12;
     item.w = heroSz * scale;
     item.h = heroSz * scale;
-    item.zIndex = i === 0 ? 4 : 3 + Math.floor(Math.random() * 3);
+    item.zIndex = i === 0 ? 4 : 2 + (i % 4);
   });
 
-  // Set up nodes with initial positions in a tight ring around centre
-  const cx = W / 2, cy = H / 2;
-  const nodes = items.map((item, i) => ({
-    id: i,
-    x: i === 0 ? cx : cx + (Math.random()-0.5) * W * 0.3,
-    y: i === 0 ? cy : cy + (Math.random()-0.5) * H * 0.3,
-    r: (item.w / 2) * 0.7, // collision radius
-    isHero: i === 0,
-  }));
+  // Nodes -- hero fixed dead centre, others start in tight ring
+  const cx = W * 0.5, cy = H * 0.5;
+  const nodes = ordered.map((item, i) => {
+    const angle = i === 0 ? 0 : ((i-1) / (ordered.length-1)) * Math.PI * 2;
+    const initR = heroSz * 0.55;
+    return {
+      x: i === 0 ? cx : cx + Math.cos(angle) * initR,
+      y: i === 0 ? cy : cy + Math.sin(angle) * initR,
+      r: (item.w * 0.42),
+      isHero: i === 0,
+      vx: 0, vy: 0,
+    };
+  });
 
-  // Simple force simulation without D3 library
-  // (D3-force CDN has module issues in iframe -- implement manually)
-  const TICKS = 120;
-  const heroStrength = 0.15;
-  const repelStrength = 0.8;
-  const damping = 0.7;
-
-  // Velocities
-  const vx = new Array(count).fill(0);
-  const vy = new Array(count).fill(0);
-
+  // Physics simulation
+  const TICKS = 200;
   for (let tick = 0; tick < TICKS; tick++) {
-    const progress = tick / TICKS;
+    const cooling = 1 - tick / TICKS; // reduce forces over time
 
     nodes.forEach((n, i) => {
-      if (n.isHero) return; // hero stays fixed at centre
+      if (n.isHero) return;
 
-      // Attraction to hero
+      // Strong attraction toward hero surface (not centre)
       const dx = nodes[0].x - n.x;
       const dy = nodes[0].y - n.y;
       const dist = Math.sqrt(dx*dx + dy*dy) || 1;
-      const targetDist = nodes[0].r + n.r + 4; // just touching hero
-
-      if (dist > targetDist) {
-        const force = heroStrength * (dist - targetDist) / dist;
-        vx[i] += dx * force;
-        vy[i] += dy * force;
+      const targetDist = nodes[0].r + n.r - 8; // slight overlap for natural look
+      const gap = dist - targetDist;
+      if (Math.abs(gap) > 1) {
+        const f = 0.18 * gap / dist * cooling;
+        n.vx += dx * f;
+        n.vy += dy * f;
       }
 
-      // Repulsion from other non-hero nodes
+      // Repulsion from other nodes (prevent stacking)
       nodes.forEach((m, j) => {
         if (j === i) return;
         const ex = n.x - m.x;
         const ey = n.y - m.y;
         const ed = Math.sqrt(ex*ex + ey*ey) || 1;
-        const minDist = n.r + m.r + 2;
-        if (ed < minDist) {
-          const force = repelStrength * (minDist - ed) / ed;
-          vx[i] += ex * force;
-          vy[i] += ey * force;
+        const minD = n.r + m.r - 12; // allow slight overlap
+        if (ed < minD) {
+          const f = 0.9 * (minD - ed) / ed;
+          n.vx += ex * f;
+          n.vy += ey * f;
         }
       });
 
-      // Apply velocity with damping
-      vx[i] *= damping;
-      vy[i] *= damping;
-      n.x += vx[i];
-      n.y += vy[i];
+      // Gentle pull toward canvas centre to prevent edge drift
+      n.vx += (cx - n.x) * 0.008 * cooling;
+      n.vy += (cy - n.y) * 0.008 * cooling;
 
-      // Keep within canvas bounds
-      const pad = n.r + 10;
-      n.x = Math.max(pad, Math.min(W - pad, n.x));
-      n.y = Math.max(pad, Math.min(H - pad, n.y));
+      // Damping + integrate
+      n.vx *= 0.65;
+      n.vy *= 0.65;
+      n.x += n.vx;
+      n.y += n.vy;
+
+      // Soft canvas bounds
+      const pad = n.r * 0.5;
+      if (n.x < pad) { n.x = pad; n.vx *= -0.3; }
+      if (n.x > W-pad) { n.x = W-pad; n.vx *= -0.3; }
+      if (n.y < pad) { n.y = pad; n.vy *= -0.3; }
+      if (n.y > H-pad) { n.y = H-pad; n.vy *= -0.3; }
     });
   }
 
-  // Apply positions back to items
-  nodes.forEach((n, i) => {
-    items[i].x = n.x - items[i].w / 2;
-    items[i].y = n.y - items[i].h / 2;
-    items[i].angle = n.isHero
-      ? (Math.random()-0.5) * 6
-      : (Math.random()-0.5) * 22;
+  // Apply back to original items array
+  ordered.forEach((item, i) => {
+    const n = nodes[i];
+    item.x = n.x - item.w / 2;
+    item.y = n.y - item.h / 2;
+    item.angle = n.isHero
+      ? (Math.random()-0.5) * 5
+      : (Math.random()-0.5) * 28;
   });
 }
 
