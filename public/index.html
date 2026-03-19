@@ -315,7 +315,7 @@ https://anysite.com/product/item-two"></textarea>
 
 </div>
   <div style="text-align:center;margin-top:3rem;font-size:10px;font-family:'DM Mono',monospace;color:#333;letter-spacing:.5px;">
-    Extracto v2.8 &mdash; brewed by Jonas for Devote Digital</div>
+    Extracto v2.9 &mdash; brewed by Jonas for Devote Digital</div>
 </div>
 
 <script>
@@ -957,7 +957,7 @@ async function handleGo() {
   document.getElementById('studio-loading').classList.add('hidden');
   document.getElementById('extract-grid').innerHTML = '';
   document.getElementById('bcanvas').innerHTML = '';
-  bundleItems = []; extractedImageUrls = [];
+  bundleItems = []; extractedImageUrls = []; manualHeroId = null;
   clearLog();
 
   if (mode==='transparent') await runExtract(urls);
@@ -1276,6 +1276,7 @@ async function renderBundleCanvas() {
 
 // ── D3-force bundle layout ─────────────────────────────────────────────────────
 let currentArrangement = 'hero';
+let manualHeroId = null; // set when user double-clicks an item
 
 function changeArrangement() {
   currentArrangement = document.getElementById('arrangement-select').value;
@@ -1303,15 +1304,20 @@ function d3ForceLayout(items, W, H) {
   if (!items.length) return;
   const count = items.length;
 
-  // Detect hero by counting non-transparent pixels on a small canvas sample
+  // Detect hero -- respect manual override, otherwise use opaque pixel count
   const heroIdx = (() => {
+    // If user manually set a hero, use that
+    if (manualHeroId !== null) {
+      const idx = items.findIndex(it => it.id === manualHeroId);
+      if (idx >= 0) return idx;
+    }
+    // Auto-detect: item with most non-transparent pixels
     let best = 0, bestScore = 0;
     items.forEach((item, i) => {
       const el = document.getElementById('bi-'+item.id);
       const img = el?.querySelector('img');
       if (!img || !img.naturalWidth) return;
       try {
-        // Sample at 40x40 to count non-transparent pixels
         const sc = document.createElement('canvas');
         sc.width = 40; sc.height = 40;
         const sctx = sc.getContext('2d');
@@ -1728,19 +1734,23 @@ function deselectAll(){
 function canvasDown(e){
   const itemEl=e.target.closest('.bitem');
   if(!itemEl){deselectAll();return;}
-  // Double click sets as hero (re-runs layout with this item as hero)
+  // Double click sets as hero
   if(e.detail === 2) {
     const id = parseInt(itemEl.dataset.id);
+    manualHeroId = id; // lock this item as hero
     const idx = bundleItems.findIndex(it => it.id === id);
-    if(idx > 0) {
-      // Move to front of array so it becomes hero
+    if(idx >= 0) {
       const [hero] = bundleItems.splice(idx, 1);
       bundleItems.unshift(hero);
       const W = bc().offsetWidth, H = bc().offsetHeight;
       applyArrangement(bundleItems, currentArrangement, W, H);
       bc().innerHTML = '';
-      bundleItems.forEach(item => mountItem(item));
-      toast('Hero updated — double-click any item to set as hero');
+      bundleItems.forEach(item => { mountItem(item); });
+      bundleItems.forEach(item => {
+        const el = document.getElementById('bi-'+item.id);
+        if(el){ applyT(el,item); if(item.zIndex) el.style.zIndex=item.zIndex; }
+      });
+      toast('Hero set — double-click any item to change');
       return;
     }
   }
