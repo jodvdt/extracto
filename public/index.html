@@ -315,7 +315,7 @@ https://anysite.com/product/item-two"></textarea>
 
 </div>
   <div style="text-align:center;margin-top:3rem;font-size:10px;font-family:'DM Mono',monospace;color:#333;letter-spacing:.5px;">
-    Extracto v3.1 &mdash; brewed by Jonas for Devote Digital</div>
+    Extracto v3.2 &mdash; brewed by Jonas for Devote Digital</div>
 </div>
 
 <script>
@@ -1304,10 +1304,6 @@ function d3ForceLayout(items, W, H) {
   if (!items.length) return;
   const count = items.length;
 
-  // Ground line -- everything anchors to this Y position
-  const groundY = H * 0.78;
-  const cx = W * 0.5;
-
   // Detect hero
   const heroIdx = (() => {
     if (manualHeroId !== null) {
@@ -1332,84 +1328,50 @@ function d3ForceLayout(items, W, H) {
     return best;
   })();
 
-  // Reorder so hero is first
   const ordered = [items[heroIdx], ...items.filter((_,i) => i !== heroIdx)];
 
-  // Size items -- hero largest, depth-based scaling for others
-  // Items further from centre (sides) are slightly larger (foreshortening effect)
-  const heroSz = Math.min(W * 0.32, H * 0.60);
+  // Canvas centre anchor
+  const cx = W * 0.5;
+  const cy = H * 0.52;
 
-  // Assign positions emanating from centre ground point
-  // Fan out in a semicircle on the ground plane
-  // Hero sits back-centre, supporters fan forward and sideways
-  const positions = getEmanatingPositions(count, W, H, groundY, cx, heroSz);
+  // Hero size -- big, dominant
+  const heroSz = Math.min(W, H) * 0.55;
 
-  ordered.forEach((item, i) => {
-    const pos = positions[i];
-    item.w = pos.sz;
-    item.h = pos.sz;
-    item.x = pos.cx - pos.sz / 2;
-    // Each item sits on its own depth-based ground line
-    item.y = pos.groundY - pos.sz * 0.88;
-    item.angle = pos.angle;
-    item.zIndex = pos.z;
-  });
-}
-
-function getEmanatingPositions(count, W, H, groundY, cx, heroSz) {
-  const positions = [];
-
-  // Perspective grid approach:
-  // Canvas is treated as a tilted surface viewed from above-front
-  // Items further back = smaller + higher Y, items in front = larger + lower Y
-  // Hero is mid-depth centre, everything clusters around it with overlap
-
-  // Depth levels: 0 = furthest back (top of canvas), 1 = closest (bottom)
-  // Each depth level: Y position, scale multiplier
-  const depthToY = d => groundY - (1 - d) * H * 0.55; // back items higher
-  const depthToScale = d => 0.48 + d * 0.52; // back items smaller
-
-  // Pre-defined slot grid -- (x as fraction of W from centre, depth 0-1, z)
-  const allSlots = [
-    // Hero
-    { dx:  0.00, depth: 0.55, z: 4, heroSlot: true },
-    // Ring 1 -- close to hero
-    { dx: -0.22, depth: 0.48, z: 3 },
-    { dx:  0.22, depth: 0.48, z: 3 },
-    // Ring 2 -- slightly further
-    { dx: -0.36, depth: 0.62, z: 5 },
-    { dx:  0.36, depth: 0.62, z: 5 },
-    // Back centre
-    { dx:  0.00, depth: 0.28, z: 1 },
-    // Front sides
-    { dx: -0.18, depth: 0.80, z: 6 },
-    { dx:  0.18, depth: 0.80, z: 6 },
-    // Back sides
-    { dx: -0.28, depth: 0.22, z: 2 },
-    { dx:  0.28, depth: 0.22, z: 2 },
+  // Tight overlap offsets relative to hero centre
+  // Each offset is [dx, dy, scale, angle, z] as fraction of heroSz
+  // Negative dx/dy = left/up, positive = right/down
+  // Items intentionally overlap hero by ~20-30% of their size
+  const offsets = [
+    // hero itself
+    [  0.00,  0.00, 1.00,  0, 3 ],
+    // tight cluster around hero
+    [ -0.52,  0.10, 0.68, -12, 4 ], // left, slightly forward
+    [  0.50,  0.08, 0.64,  14, 4 ], // right, slightly forward
+    [ -0.28, -0.38, 0.52,  -8, 2 ], // upper left, behind
+    [  0.30, -0.32, 0.50,  10, 2 ], // upper right, behind
+    [  0.00,  0.42, 0.48,   4, 5 ], // directly in front
+    [ -0.50,  0.42, 0.44, -18, 5 ], // front left
+    [  0.48,  0.40, 0.44,  16, 5 ], // front right
+    [  0.00, -0.52, 0.42,  -3, 1 ], // directly behind
+    [ -0.24,  0.60, 0.40,  12, 6 ], // very front left
   ];
 
-  const slots = allSlots.slice(0, count);
+  ordered.forEach((item, i) => {
+    const off = offsets[Math.min(i, offsets.length - 1)];
+    const sz = heroSz * off[2];
+    item.w = sz;
+    item.h = sz;
+    item.x = cx + off[0] * heroSz - sz / 2 + (Math.random()-0.5) * heroSz * 0.06;
+    item.y = cy + off[1] * heroSz - sz / 2 + (Math.random()-0.5) * heroSz * 0.06;
+    item.angle = off[3] + (Math.random()-0.5) * 8;
+    item.zIndex = off[4];
 
-  slots.forEach((slot, i) => {
-    const scale = slot.heroSlot ? 1.0 : depthToScale(slot.depth) * (0.9 + Math.random() * 0.15);
-    const sz = heroSz * scale;
-    const itemCx = cx + slot.dx * W + (Math.random()-0.5) * W * 0.03;
-    const itemY = depthToY(slot.depth);
-    const angleRange = slot.heroSlot ? 4 : 20;
-
-    positions.push({
-      cx: itemCx,
-      groundY: itemY, // each item's own ground based on depth
-      sz,
-      angle: (Math.random()-0.5) * angleRange,
-      z: slot.z,
-    });
+    // Clamp to canvas with padding
+    const pad = sz * 0.15;
+    item.x = Math.max(-pad, Math.min(W - sz + pad, item.x));
+    item.y = Math.max(-pad, Math.min(H - sz + pad, item.y));
   });
-
-  return positions;
 }
-
 
 // ── Flat lay layout ────────────────────────────────────────────────────────────
 function flatlayLayout(items, W, H) {
