@@ -301,7 +301,7 @@ https://anysite.com/product/item-two"></textarea>
 
 </div>
   <div style="text-align:center;margin-top:3rem;font-size:10px;font-family:'DM Mono',monospace;color:#333;letter-spacing:.5px;">
-    Extracto v1.8 &copy; 2026 Jonas for Devote Digital
+    Extracto v1.9 &copy; 2026 Jonas for Devote Digital
   </div>
 </div>
 
@@ -688,10 +688,12 @@ function extractFromHtml(html, url, source) {
         s.includes('tracking') || s.includes('avatar') || s.includes('placeholder') ||
         s.includes('map') || s.includes('footer') || s.includes('flag') ||
         s.includes('payment') || s.includes('visa') || s.includes('mastercard') ||
-        s.includes('social') || s.includes('twitter') || s.includes('instagram')) return false;
+        s.includes('social') || s.includes('twitter') || s.includes('instagram') ||
+        s.includes('afterpay') || s.includes('zip-') || s.includes('humm')) return false;
     if (s.match(/\.(jpg|jpeg|png|webp)/)) return true;
     if (s.includes('/assets/') || s.includes('/images/assets') ||
-        s.includes('/product') || s.includes('/media/') || s.includes('cdn')) return true;
+        s.includes('/product') || s.includes('/media/') || s.includes('cdn') ||
+        s.includes('/images/') || s.includes('/img/') || s.includes('/photos/')) return true;
     return false;
   }).map(src => {
     if (src.startsWith('//')) return 'https:' + src;
@@ -707,13 +709,16 @@ function extractFromHtml(html, url, source) {
       if (s.match(/\.(jpg|jpeg|png|webp)/i)) n += 4;
       if (s.includes('/product')) n += 5;
       if (s.includes('/Images/Assets') || s.includes('/images/assets')) n += 5;
+      if (s.includes('/assets/full/')) n += 6;  // KAON and similar CMSes
+      if (s.includes('/assets/alt_')) n += 4;   // KAON alternate images
       if (s.includes('/assets/')) n += 3;
       if (s.includes('/media/')) n += 2;
+      if (s.includes('/images/')) n += 2;
       if (s.includes('cdn')) n += 1;
       // Penalise footer/map/social/promo images
       if (s.includes('map') || s.includes('footer') || s.includes('social')) n -= 10;
-      // Builder.io CDN: heavily penalise -- these are almost never product images in static HTML
-      // Builder.io renders product images via JS, static HTML only has promo/layout assets
+      if (s.includes('thumb') || s.includes('thumbL') || s.includes('_thumb')) n -= 2; // prefer full size
+      // Builder.io CDN: heavily penalise
       if (s.includes('cdn.builder.io') || s.includes('builder.io/api')) n -= 20;
       return n;
     };
