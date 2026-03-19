@@ -499,11 +499,34 @@ https://anysite.com/product/item-two"></textarea>
       const candidates = imgMatches.map(m => m[1])
         .filter(src => {
           const s = src.toLowerCase();
-          return (s.startsWith('http') || src.startsWith('//')) &&
-                 (s.includes('/product') || s.includes('/image') || s.includes('cdn') || s.match(/\.(jpg|jpeg|png|webp)/)) &&
-                 !s.includes('logo') && !s.includes('icon') && !s.includes('sprite') && !s.includes('banner');
+          if (!s.startsWith('http') && !src.startsWith('/')) return false;
+          if (s.includes('logo') || s.includes('icon') || s.includes('sprite') || s.includes('banner') || s.includes('pixel') || s.includes('tracking') || s.includes('facebook') || s.includes('analytics')) return false;
+          // Accept known image extensions
+          if (s.match(/\.(jpg|jpeg|png|webp|gif)/)) return true;
+          // Accept extensionless image paths that look like product images
+          if (s.includes('/assets/') || s.includes('/images/assets/') || s.includes('/product') || s.includes('/image') || s.includes('cdn') || s.includes('/media/')) return true;
+          return false;
         })
-        .map(src => src.startsWith('//') ? 'https:' + src : src);
+        .map(src => {
+          // Make relative URLs absolute
+          if (src.startsWith('//')) return 'https:' + src;
+          if (src.startsWith('/')) {
+            try { return new URL(url).origin + src; } catch(e) { return src; }
+          }
+          return src;
+        })
+        // Prefer larger/product images — sort by path depth and known keywords
+        .sort((a, b) => {
+          const score = s => {
+            let n = 0;
+            if (s.includes('/product')) n += 3;
+            if (s.includes('/assets/')) n += 2;
+            if (s.includes('/images/')) n += 1;
+            if (s.match(/\.(jpg|jpeg|png|webp)/)) n += 2;
+            return n;
+          };
+          return score(b) - score(a);
+        });
 
       if (candidates.length) { logLine('img scan','tag-ok',`Image found via scan for ${labelFromUrl(url)}`); return candidates[0]; }
       return null;
@@ -520,6 +543,14 @@ https://anysite.com/product/item-two"></textarea>
       const ogMatch = html.match(/<meta[^>]+property=["']og:image["'][^>]+content=["']([^"']+)["']/i)
                    || html.match(/<meta[^>]+content=["']([^"']+)["'][^>]+property=["']og:image["']/i);
       if (ogMatch?.[1]?.startsWith('http')) { logLine('fallback','tag-ok',`Fallback found image for ${labelFromUrl(url)}`); return ogMatch[1]; }
+
+      // Last resort: scan for extensionless asset image patterns
+      const assetMatch = html.match(/["']((?:https?:)?\/\/[^"']+\/(?:Images|Assets|images|assets)\/[^"'?#]+\/\d+\/)[^"']*/i);
+      if (assetMatch?.[1]) {
+        const assetUrl = assetMatch[1].startsWith('//') ? 'https:' + assetMatch[1] : assetMatch[1];
+        logLine('fallback','tag-ok',`Found asset image for ${labelFromUrl(url)}`);
+        return assetUrl;
+      }
       return null;
     } catch { return null; }
   }
