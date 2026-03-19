@@ -463,7 +463,15 @@ async function s4_gemini(url) {
     if (clean.startsWith('http')) { log('gemini','tag-ok',`Gemini found image for ${labelFromUrl(url)}`); return clean; }
     if (clean.startsWith('/') && origin) { log('gemini','tag-ok',`Gemini found image for ${labelFromUrl(url)}`); return origin+clean; }
     return null;
-  } catch(e) { log('gemini','tag-fail',`Gemini error: ${e.message}`); return null; }
+  } catch(e) {
+    // Quota exceeded — don't show as hard failure, just skip silently
+    if (e.message && e.message.includes('quota')) {
+      log('gemini','tag-try','Gemini quota reached — skipping');
+    } else {
+      log('gemini','tag-fail',`Gemini error: ${e.message}`);
+    }
+    return null;
+  }
 }
 
 function extractFromHtml(html, url, source) {
@@ -488,17 +496,44 @@ function extractFromHtml(html, url, source) {
   const imgs = [...html.matchAll(/<img[^>]+src=["']([^"']+)["'][^>]*>/gi)].map(m => m[1]);
   const candidates = imgs.filter(src => {
     const s = src.toLowerCase();
-    if (s.includes('logo') || s.includes('icon') || s.includes('sprite') || s.includes('banner') || s.includes('pixel') || s.includes('facebook') || s.includes('tracking')) return false;
-    if (s.match(/\.(jpg|jpeg|png|webp)/)) return true;
-    if (s.includes('/assets/') || s.includes('/images/') || s.includes('/product') || s.includes('/media/') || s.includes('cdn')) return true;
+    if (!src || src.startsWith('data:')) return false;
+    if (s.includes('logo') || s.includes('icon') || s.includes('sprite') || s.includes('banner') || s.includes('pixel') || s.includes('facebook') || s.includes('tracking') || s.includes('avatar') || s.includes('placeholder')) return false;
+    if (s.match(/\.(jpg|jpeg|png|webp|gif)/)) return true;
+    if (s.includes('/assets/') || s.includes('/images/assets') || s.includes('/product') || s.includes('/media/') || s.includes('cdn')) return true;
     return false;
   }).map(src => {
     if (src.startsWith('//')) return 'https:' + src;
     if (src.startsWith('/') && origin) return origin + src;
+    if (!src.startsWith('http') && origin) return origin + '/' + src;
     return src;
   }).filter(src => src.startsWith('http'));
 
+  // Sort: prefer URLs with image extensions, then asset paths
+  candidates.sort((a,b) => {
+    const score = s => {
+      let n = 0;
+      if (s.match(/\.(jpg|jpeg|png|webp)/i)) n += 4;
+      if (s.includes('/product')) n += 3;
+      if (s.includes('/Images/Assets') || s.includes('/images/assets')) n += 3;
+      if (s.includes('/assets')) n += 2;
+      if (s.includes('/media')) n += 1;
+      return n;
+    };
+    return score(b) - score(a);
+  });
+
   if (candidates.length) { log(source,'tag-ok',`Image found via scan for ${labelFromUrl(url)}`); return candidates[0]; }
+
+  // Last resort: look for any asset path pattern in raw HTML (catches ecrotek-style extensionless paths)
+  const assetMatch = html.match(/["'](\/Images\/Assets\/\d+\/\d+\/)[^"']*/i)
+                  || html.match(/["'](\/images\/assets\/\d+\/\d+\/)[^"']*/i)
+                  || html.match(/["'](\/media\/[^"'?]+)[^"']*/i);
+  if (assetMatch?.[1] && origin) {
+    const assetUrl = origin + assetMatch[1];
+    log(source,'tag-ok',`Asset path found for ${labelFromUrl(url)}`);
+    return assetUrl;
+  }
+
   return null;
 }
 
