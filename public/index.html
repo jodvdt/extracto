@@ -301,7 +301,7 @@ https://anysite.com/product/item-two"></textarea>
 
 </div>
   <div style="text-align:center;margin-top:3rem;font-size:10px;font-family:'DM Mono',monospace;color:#333;letter-spacing:.5px;">
-    Extracto v1.7b-debug &copy; 2026 Jonas for Devote Digital
+    Extracto v1.8 &copy; 2026 Jonas for Devote Digital
   </div>
 </div>
 
@@ -462,10 +462,21 @@ async function fetchImageUrl(url) {
   const wcImg = await s1b_woocommerce(url);
   if (wcImg) return `/api/image?url=${encodeURIComponent(wcImg)}`;
 
-  // Non-Shopify: find image URL then wrap through image proxy
-  let imgUrl = await s2_proxy(url)
-            || await s3_allorigins(url)
-            || await s4_gemini(url);
+  // Non-Shopify: try proxy first
+  // If proxy gets HTML but finds no image, skip allorigins (same HTML, same result)
+  // and go straight to Gemini
+  const proxyResult = await s2_proxy(url);
+  if (proxyResult && proxyResult !== 'NO_IMAGE') {
+    let imgUrl = proxyResult;
+    if (!imgUrl.startsWith('/api/image')) imgUrl = `/api/image?url=${encodeURIComponent(imgUrl)}`;
+    return imgUrl;
+  }
+
+  // If proxy got HTML but no image, skip allorigins (same content, same result)
+  // go straight to Gemini
+  let imgUrl = proxyResult === 'NO_IMAGE'
+    ? await s4_gemini(url)
+    : await s3_allorigins(url) || await s4_gemini(url);
 
   if (!imgUrl) {
     log('failed','tag-fail',`Could not extract image from ${labelFromUrl(url)}`);
@@ -547,6 +558,11 @@ async function s2_proxy(url) {
 }
 
 async function s3_allorigins(url) {
+  // Amazon blocks all scrapers -- fail fast instead of timing out
+  if (url.includes('amazon.com') || url.includes('amazon.com.au') || url.includes('amzn.')) {
+    log('allorigins','tag-fail','Amazon blocks scraping — paste the direct image URL instead');
+    return null;
+  }
   try {
     const res = await fetch(`https://api.allorigins.win/get?url=${encodeURIComponent(url)}`, {signal:AbortSignal.timeout(10000)});
     if (!res.ok) { log('allorigins','tag-fail',`allorigins returned ${res.status}`); return null; }
@@ -696,9 +712,9 @@ function extractFromHtml(html, url, source) {
       if (s.includes('cdn')) n += 1;
       // Penalise footer/map/social/promo images
       if (s.includes('map') || s.includes('footer') || s.includes('social')) n -= 10;
-      // Builder.io CDN: only trust if it's clearly a product image
-      // Deprioritise generic builder.io assets (promo banners, section images)
-      if (s.includes('cdn.builder.io') || s.includes('builder.io/api')) n -= 3;
+      // Builder.io CDN: heavily penalise -- these are almost never product images in static HTML
+      // Builder.io renders product images via JS, static HTML only has promo/layout assets
+      if (s.includes('cdn.builder.io') || s.includes('builder.io/api')) n -= 20;
       return n;
     };
     return score(b) - score(a);
