@@ -305,7 +305,7 @@ https://anysite.com/product/item-two"></textarea>
 
 </div>
   <div style="text-align:center;margin-top:3rem;font-size:10px;font-family:'DM Mono',monospace;color:#333;letter-spacing:.5px;">
-    Extracto v1.00 &copy; 2026 Jonas for Devote Digital
+    Extracto v1.2 &copy; 2026 Jonas for Devote Digital
   </div>
 </div>
 
@@ -534,14 +534,44 @@ function extractFromHtml(html, url, source) {
   const ld = html.match(/"image"\s*:\s*"(https?:\/\/[^"]+\.(?:jpg|jpeg|png|webp)[^"]*)"/i);
   if (ld?.[1]) { log(source,'tag-ok',`JSON-LD image found for ${labelFromUrl(url)}`); return ld[1]; }
 
-  // img src scan — accepts extensionless asset paths too
+  // Priority 1: scan <a href> for asset image paths FIRST (ecrotek pattern)
+  const hrefMatches = [...html.matchAll(/<a[^>]+href=["']([^"']+)["'][^>]*>/gi)].map(m => m[1]);
+  const hrefImages = hrefMatches.filter(href => {
+    const h = href.toLowerCase();
+    if (h.includes('download') || h.includes('.pdf') || h.includes('login') || h.includes('cart')) return false;
+    return h.includes('/images/assets/') || h.includes('/assets/') || h.match(/\/assets\/\d+\/\d+\//);
+  }).map(href => {
+    if (href.startsWith('/') && origin) return origin + href;
+    if (href.startsWith('http')) return href;
+    return null;
+  }).filter(Boolean);
+
+  if (hrefImages.length) {
+    // Sort by size number in path — higher = larger image (e.g. /11/ > /10/)
+    hrefImages.sort((a, b) => {
+      const numA = parseInt(a.match(/\/(\d+)\/?$/)?.[1] || '0');
+      const numB = parseInt(b.match(/\/(\d+)\/?$/)?.[1] || '0');
+      return numB - numA;
+    });
+    log(source,'tag-ok',`Asset href found for ${labelFromUrl(url)}`);
+    return hrefImages[0];
+  }
+
+  // Priority 2: og:image / twitter:image already checked above, now img src scan
   const imgs = [...html.matchAll(/<img[^>]+src=["']([^"']+)["'][^>]*>/gi)].map(m => m[1]);
   const candidates = imgs.filter(src => {
     const s = src.toLowerCase();
     if (!src || src.startsWith('data:')) return false;
-    if (s.includes('logo') || s.includes('icon') || s.includes('sprite') || s.includes('banner') || s.includes('pixel') || s.includes('facebook') || s.includes('tracking') || s.includes('avatar') || s.includes('placeholder')) return false;
-    if (s.match(/\.(jpg|jpeg|png|webp|gif)/)) return true;
-    if (s.includes('/assets/') || s.includes('/images/assets') || s.includes('/product') || s.includes('/media/') || s.includes('cdn')) return true;
+    // Exclude clearly wrong images
+    if (s.includes('logo') || s.includes('icon') || s.includes('sprite') ||
+        s.includes('banner') || s.includes('pixel') || s.includes('facebook') ||
+        s.includes('tracking') || s.includes('avatar') || s.includes('placeholder') ||
+        s.includes('map') || s.includes('footer') || s.includes('flag') ||
+        s.includes('payment') || s.includes('visa') || s.includes('mastercard') ||
+        s.includes('social') || s.includes('twitter') || s.includes('instagram')) return false;
+    if (s.match(/\.(jpg|jpeg|png|webp)/)) return true;
+    if (s.includes('/assets/') || s.includes('/images/assets') ||
+        s.includes('/product') || s.includes('/media/') || s.includes('cdn')) return true;
     return false;
   }).map(src => {
     if (src.startsWith('//')) return 'https:' + src;
@@ -550,60 +580,24 @@ function extractFromHtml(html, url, source) {
     return src;
   }).filter(src => src.startsWith('http'));
 
-  // Sort: prefer URLs with image extensions, then asset paths
+  // Score and sort candidates
   candidates.sort((a,b) => {
     const score = s => {
       let n = 0;
       if (s.match(/\.(jpg|jpeg|png|webp)/i)) n += 4;
-      if (s.includes('/product')) n += 3;
-      if (s.includes('/Images/Assets') || s.includes('/images/assets')) n += 3;
-      if (s.includes('/assets')) n += 2;
-      if (s.includes('/media')) n += 1;
+      if (s.includes('/product')) n += 5;
+      if (s.includes('/Images/Assets') || s.includes('/images/assets')) n += 5;
+      if (s.includes('/assets/')) n += 3;
+      if (s.includes('/media/')) n += 2;
+      if (s.includes('cdn')) n += 1;
+      // Penalise footer/map/social images
+      if (s.includes('map') || s.includes('footer') || s.includes('social')) n -= 10;
       return n;
     };
     return score(b) - score(a);
   });
 
   if (candidates.length) { log(source,'tag-ok',`Image found via scan for ${labelFromUrl(url)}`); return candidates[0]; }
-
-  // Scan <a href> links for image asset paths (ecrotek puts images in href, not src)
-  const hrefMatches = [...html.matchAll(/<a[^>]+href=["']([^"']+)["'][^>]*>/gi)].map(m => m[1]);
-  const hrefImages = hrefMatches.filter(href => {
-    const h = href.toLowerCase();
-    return (h.includes('/images/assets/') || h.includes('/assets/') || h.includes('/media/')) &&
-           !h.includes('download') && !h.includes('.pdf');
-  }).map(href => {
-    if (href.startsWith('/') && origin) return origin + href;
-    if (href.startsWith('http')) return href;
-    return null;
-  }).filter(Boolean);
-
-  // Prefer the largest size — ecrotek uses /10/ for thumb, /11/ for full
-  if (hrefImages.length) {
-    // Sort: prefer higher size numbers in path (larger images)
-    hrefImages.sort((a, b) => {
-      const numA = parseInt(a.match(/\/(\d+)\/$/)?.[1] || '0');
-      const numB = parseInt(b.match(/\/(\d+)\/$/)?.[1] || '0');
-      return numB - numA;
-    });
-    log(source,'tag-ok',`Asset href found for ${labelFromUrl(url)}: ${hrefImages[0]}`);
-    return hrefImages[0];
-  }
-
-  // Last resort: regex scan for asset paths anywhere in HTML
-  const assetMatch = html.match(/href=["'](\/Images\/Assets\/\d+\/(\d+)\/)[^"']*/gi);
-  if (assetMatch && origin) {
-    // Parse all matches and pick highest size number
-    const parsed = assetMatch.map(m => {
-      const path = m.match(/href=["']([^"']+)["']/i)?.[1];
-      const size = parseInt(path?.match(/\/(\d+)\/$/)?.[1] || '0');
-      return { path, size };
-    }).filter(p => p.path).sort((a,b) => b.size - a.size);
-    if (parsed[0]?.path) {
-      log(source,'tag-ok',`Asset path found for ${labelFromUrl(url)}`);
-      return origin + parsed[0].path;
-    }
-  }
 
   return null;
 }
