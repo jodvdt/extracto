@@ -301,7 +301,7 @@ https://anysite.com/product/item-two"></textarea>
 
 </div>
   <div style="text-align:center;margin-top:3rem;font-size:10px;font-family:'DM Mono',monospace;color:#333;letter-spacing:.5px;">
-    Extracto v2.4 &mdash; brewed by Jonas for Devote Digital</div>
+    Extracto v2.5 &mdash; brewed by Jonas for Devote Digital</div>
 </div>
 
 <script>
@@ -1231,6 +1231,113 @@ function smartLayout(items, types, W, H) {
 
 // ── Bundle canvas ──────────────────────────────────────────────────────────────
 function bc() { return document.getElementById('bcanvas'); }
+
+async function renderBundleCanvas() {
+  const c=bc();c.innerHTML='';
+  const W=c.offsetWidth,H=c.offsetHeight;
+
+  // Mount all items first (preserves img src), then apply hero layout
+  bundleItems.forEach(item=>mountItem(item));
+  heroLayout(bundleItems, W, H);
+  bundleItems.forEach(item=>{
+    const el=document.getElementById('bi-'+item.id);
+    if(el){ applyT(el,item); if(item.zIndex) el.style.zIndex=item.zIndex; }
+  });
+
+  // Refine with Gemini classification if key available
+  const key=getKey();
+  if (key&&bundleItems.length) {
+    log('ai','tag-ai','Analysing image types for smart layout...');
+    try {
+      const types=await Promise.all(bundleItems.map(item=>classifyImage(item.src)));
+      log('ai','tag-ok',`Types: ${types.join(', ')}`);
+      smartLayout(bundleItems,types,W,H);
+      bundleItems.forEach(item=>{
+        const el=document.getElementById('bi-'+item.id);
+        if(el)applyT(el,item);
+      });
+    } catch(e){}
+  }
+}
+
+function heroLayout(items, W, H) {
+  const count = items.length;
+  if (!count) return;
+
+  // Layouts for different counts -- all designed to look like the reference
+  // Key principles: overlap, varying sizes, angled, depth via scale
+
+  if (count === 1) {
+    items[0].w = W * 0.55; items[0].h = W * 0.55;
+    items[0].x = (W - items[0].w) / 2;
+    items[0].y = (H - items[0].h) / 2;
+    items[0].angle = 0; items[0].zIndex = 1;
+    return;
+  }
+
+  // Define slots: each is {x%, y%, w%, angle, z}
+  // x/y/w are percentages of canvas W/H
+  const layouts = {
+    2: [
+      { x:.22, y:.12, w:.52, a: -5, z:3 }, // hero left-centre
+      { x:.42, y:.20, w:.40, a: 10, z:5 }, // front right overlapping
+    ],
+    3: [
+      { x:.22, y:.10, w:.50, a: -4, z:3 }, // hero
+      { x:.48, y:.22, w:.34, a: 12, z:5 }, // front right
+      { x:.08, y:.25, w:.30, a:-14, z:4 }, // front left
+    ],
+    4: [
+      { x:.25, y:.08, w:.48, a: -3, z:3 }, // hero
+      { x:.52, y:.18, w:.34, a: 14, z:5 }, // front right
+      { x:.06, y:.20, w:.30, a:-12, z:4 }, // front left
+      { x:.38, y:.42, w:.26, a:  6, z:6 }, // front bottom
+    ],
+    5: [
+      { x:.24, y:.08, w:.46, a: -4, z:4 }, // hero
+      { x:.54, y:.14, w:.32, a: 13, z:5 }, // right
+      { x:.06, y:.18, w:.28, a:-11, z:3 }, // left back
+      { x:.38, y:.44, w:.24, a:  8, z:6 }, // front bottom
+      { x:.04, y:.40, w:.22, a:-16, z:5 }, // front left bottom
+    ],
+    6: [
+      { x:.24, y:.06, w:.44, a: -3, z:4 }, // hero
+      { x:.54, y:.12, w:.30, a: 12, z:5 }, // right
+      { x:.06, y:.16, w:.26, a:-10, z:3 }, // left back
+      { x:.38, y:.44, w:.24, a:  7, z:6 }, // front bottom
+      { x:.04, y:.38, w:.22, a:-15, z:5 }, // front left bottom
+      { x:.60, y:.40, w:.22, a: 18, z:6 }, // front right bottom
+    ],
+    7: [
+      { x:.24, y:.06, w:.42, a: -3, z:4 }, // hero
+      { x:.54, y:.10, w:.28, a: 11, z:5 }, // right
+      { x:.06, y:.14, w:.26, a:-10, z:3 }, // left back
+      { x:.38, y:.44, w:.22, a:  7, z:6 }, // front bottom
+      { x:.04, y:.38, w:.20, a:-15, z:5 }, // front left bottom
+      { x:.60, y:.38, w:.20, a: 17, z:6 }, // front right bottom
+      { x:.20, y:.48, w:.18, a: -8, z:7 }, // very front left
+    ],
+  };
+
+  // Pick closest layout
+  const key = Math.min(count, 7);
+  const slots = layouts[key] || layouts[7];
+
+  // Add jitter so it doesn't look mechanical
+  const jitter = () => (Math.random() - 0.5) * 0.04;
+
+  items.forEach((item, i) => {
+    const slot = slots[i % slots.length];
+    const sz = W * (slot.w + jitter());
+    item.w = sz;
+    item.h = sz;
+    item.x = W * (slot.x + jitter());
+    item.y = H * (0.08 + jitter()) + (H * 0.5 - sz) * ((slot.y - 0.08) / 0.45);
+    item.angle = slot.a + (Math.random() - 0.5) * 5;
+    item.zIndex = slot.z;
+  });
+}
+
 
 async function renderBundleCanvas() {
   const c=bc();c.innerHTML='';
