@@ -72,6 +72,12 @@ select{width:100%;height:44px;background:var(--surface2);border:0.5px solid var(
 .sdot.err{background:var(--danger);}
 @keyframes blink{0%,100%{opacity:1}50%{opacity:.2}}
 
+/* Backdrop options */
+.backdrop-opt{display:flex;align-items:center;gap:7px;padding:7px 10px;background:var(--surface2);border:0.5px solid var(--border2);border-radius:var(--rad);cursor:pointer;font-size:10px;font-family:var(--mono);color:var(--muted);transition:all .15s;}
+.backdrop-opt.active{border-color:var(--accent);color:var(--text);}
+.backdrop-opt:hover{border-color:var(--border);color:var(--text);}
+.bd-swatch{width:16px;height:16px;border-radius:3px;flex-shrink:0;border:0.5px solid rgba(255,255,255,0.1);}
+
 /* Log */
 .pipeline{background:var(--surface);border:0.5px solid var(--border);border-radius:var(--rad);padding:10px 14px;margin-bottom:1rem;max-height:110px;overflow-y:auto;}
 .pipeline::-webkit-scrollbar{width:3px;}
@@ -274,36 +280,48 @@ https://anysite.com/product/item-two"></textarea>
       <div class="studio-dot"></div>
       <div>
         <div class="studio-title">Studio Shoot</div>
-        <div class="studio-sub">Client-side studio compositing</div>
+        <div class="studio-sub">Arrange · then generate with AI</div>
       </div>
-    </div>
-    <div class="studio-modes">
-      <button class="smode-btn active" id="smode-auto" onclick="setStudioMode('auto')">
-        <span class="mn">Auto</span><span class="md">AI arranges everything</span>
-      </button>
-      <button class="smode-btn" id="smode-canvas" onclick="setStudioMode('canvas')">
-        <span class="mn">Canvas first</span><span class="md">You arrange, then render</span>
-      </button>
-    </div>
-    <div class="field-label">Backdrop style</div>
-    <div style="position:relative;margin-bottom:1rem;">
-      <select id="studio-style" style="width:100%;height:40px;background:var(--surface2);border:0.5px solid var(--border2);border-radius:8px;padding:0 36px 0 13px;color:var(--text);font-family:var(--font);font-size:13px;cursor:pointer;appearance:none;-webkit-appearance:none;outline:none;">
-        <option value="white">Clean white — seamless white sweep</option>
-        <option value="warm">Warm natural — cream and sand tones</option>
-        <option value="dark">Dark studio — dramatic black sweep</option>
-        <option value="gradient">Cool gradient — soft blue tones</option>
+      <select id="studio-arrangement" onchange="changeStudioArrangement()" style="margin-left:auto;height:30px;background:var(--surface2);border:0.5px solid var(--border2);border-radius:6px;padding:0 12px;color:var(--text);font-family:var(--mono);font-size:11px;cursor:pointer;outline:none;">
+        <option value="hero">Hero centre</option>
+        <option value="flatlay">Flat lay</option>
+        <option value="scattered">Scattered</option>
+        <option value="diagonal">Diagonal stack</option>
+        <option value="podium">Podium</option>
       </select>
-      <div class="select-arrow"><svg width="11" height="11" viewBox="0 0 11 11" fill="none"><path d="M1.5 3.5L5.5 7.5L9.5 3.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
     </div>
-    <div id="studio-canvas-note" class="hidden" style="font-size:11px;font-family:var(--mono);color:var(--muted);margin-bottom:1rem;padding:8px 12px;background:var(--surface2);border-radius:6px;">Arrange products on the bundle canvas above, then hit Render.</div>
+
+    <!-- Pre-compose canvas -->
+    <div class="bundle-wrap" style="margin-bottom:8px;">
+      <div class="bcanvas" id="studio-bcanvas" onmousedown="studioCanvasDown(event)" ontouchstart="studioCanvasDown(event)"></div>
+    </div>
+    <div style="font-size:10px;font-family:var(--mono);color:var(--muted);text-align:center;margin-bottom:14px;">drag · resize · rotate · double-click to set hero &nbsp;·&nbsp; layout guides AI generation</div>
+
+    <!-- Backdrop -->
+    <div class="field-label">Backdrop style</div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:14px;">
+      <label class="backdrop-opt active" onclick="selectBackdrop('white',this)"><span class="bd-swatch" style="background:linear-gradient(135deg,#fff,#e8e8e8)"></span><span>Clean white</span></label>
+      <label class="backdrop-opt" onclick="selectBackdrop('warm',this)"><span class="bd-swatch" style="background:linear-gradient(135deg,#fdf6ee,#e8d5b8)"></span><span>Warm natural</span></label>
+      <label class="backdrop-opt" onclick="selectBackdrop('dark',this)"><span class="bd-swatch" style="background:linear-gradient(135deg,#1a1a1a,#0a0a0a)"></span><span>Dark studio</span></label>
+      <label class="backdrop-opt" onclick="selectBackdrop('gradient',this)"><span class="bd-swatch" style="background:linear-gradient(135deg,#e8f0fe,#c2d4f8)"></span><span>Cool gradient</span></label>
+    </div>
+
+    <!-- Generate button -->
     <button class="studio-generate-btn" id="studio-btn" onclick="runStudioShoot()">
       <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M7 1L8.5 5.5H13L9.5 8.5L11 13L7 10L3 13L4.5 8.5L1 5.5H5.5L7 1Z" fill="#0b0b0b"/></svg>
-      Render Studio Shoot
+      Generate Studio Shoot
     </button>
+    <div style="font-size:9px;font-family:var(--mono);color:var(--muted);text-align:center;margin-top:6px;margin-bottom:4px;">requires paid Gemini API key with image generation enabled</div>
+
+    <!-- Loading -->
     <div class="studio-loading hidden" id="studio-loading">
-      <div class="studio-loading-txt">Rendering studio shot...</div>
-      <div class="shimmer-bar"><div class="shimmer-inner"></div></div>
+      <div class="studio-loading-txt">Generating studio shot — 10-20 seconds...</div>
+      <div style="width:100%;height:3px;background:var(--surface2);border-radius:2px;overflow:hidden;margin-top:8px;">
+        <div id="studio-progress" style="height:100%;width:0%;background:var(--accent);transition:width 0.4s ease;border-radius:2px;"></div>
+      </div>
     </div>
+
+    <!-- Result -->
     <div class="studio-result hidden" id="studio-result">
       <div class="studio-img-wrap"><img id="studio-img" src="" alt="Studio shot"></div>
       <div class="studio-dl-row">
@@ -315,7 +333,7 @@ https://anysite.com/product/item-two"></textarea>
 
 </div>
   <div style="text-align:center;margin-top:3rem;font-size:10px;font-family:'DM Mono',monospace;color:#333;letter-spacing:.5px;">
-    Extracto v3.2 &mdash; brewed by Jonas for Devote Digital</div>
+    Extracto v3.3 &mdash; brewed by Jonas for Devote Digital</div>
 </div>
 
 <script>
@@ -957,7 +975,7 @@ async function handleGo() {
   document.getElementById('studio-loading').classList.add('hidden');
   document.getElementById('extract-grid').innerHTML = '';
   document.getElementById('bcanvas').innerHTML = '';
-  bundleItems = []; extractedImageUrls = []; manualHeroId = null;
+  bundleItems = []; extractedImageUrls = []; manualHeroId = null; studioBundleItems = []; studioManualHeroId = null;
   clearLog();
 
   if (mode==='transparent') await runExtract(urls);
@@ -1021,6 +1039,7 @@ async function runBundle(urls) {
 // ── Studio pipeline ────────────────────────────────────────────────────────────
 async function runStudioPipeline(urls) {
   setSt('loading','Extracting product images...');
+  studioBundleItems = []; studioManualHeroId = null;
   for (let i=0;i<urls.length;i++) {
     setSt('loading',`Extracting ${i+1} of ${urls.length}...`);
     try {
@@ -1030,41 +1049,215 @@ async function runStudioPipeline(urls) {
         const final = bgResult?.result ?? bgResult;
         if(final && typeof final === 'string'){
           extractedImageUrls.push(final);
-          bundleItems.push({id:bundleItems.length,src:final,label:labelFromUrl(urls[i]),x:0,y:0,w:120,h:120,angle:0});
+          studioBundleItems.push({id:studioBundleItems.length,src:final,label:labelFromUrl(urls[i]),x:0,y:0,w:120,h:120,angle:0});
         }
       }
     } catch(e){}
   }
   if (!extractedImageUrls.length) { setSt('error','Could not extract any images.'); return; }
   document.getElementById('studio-section').classList.remove('hidden');
-  if (studioMode==='canvas') {
-    document.getElementById('bundle-results').classList.remove('hidden');
-    await renderBundleCanvas();
-    setSt('done',`${extractedImageUrls.length} image${extractedImageUrls.length!==1?'s':''} ready — arrange then hit Render`);
-  } else {
-    await runStudioShoot();
+  document.getElementById('studio-result').classList.add('hidden');
+  document.getElementById('studio-loading').classList.add('hidden');
+  await renderStudioCanvas();
+  setSt('done',`${extractedImageUrls.length} image${extractedImageUrls.length!==1?'s':''} ready — arrange then hit Generate`);
+}
+
+// ── Studio canvas (separate from bundle) ───────────────────────────────────────
+let studioBundleItems = [];
+let studioManualHeroId = null;
+let studioArrangement = 'hero';
+let selectedBackdrop = 'white';
+
+function changeStudioArrangement() {
+  studioArrangement = document.getElementById('studio-arrangement').value;
+  const el = document.getElementById('studio-bcanvas');
+  const W = el.offsetWidth, H = el.offsetHeight;
+  const saved = bundleItems, savedHero = manualHeroId;
+  bundleItems = studioBundleItems; manualHeroId = studioManualHeroId;
+  applyArrangement(studioBundleItems, studioArrangement, W, H);
+  bundleItems = saved; manualHeroId = savedHero;
+  studioBundleItems.forEach(item => {
+    const el2 = document.getElementById('sbi-'+item.id);
+    if(el2){ applyT(el2,item); if(item.zIndex) el2.style.zIndex=item.zIndex; }
+  });
+}
+
+async function renderStudioCanvas() {
+  const canvas = document.getElementById('studio-bcanvas');
+  canvas.innerHTML = '';
+  studioBundleItems.forEach(item => mountStudioItem(item));
+  const W = canvas.offsetWidth, H = canvas.offsetHeight;
+  const saved = bundleItems, savedHero = manualHeroId;
+  bundleItems = studioBundleItems; manualHeroId = studioManualHeroId;
+  applyArrangement(studioBundleItems, studioArrangement, W, H);
+  bundleItems = saved; manualHeroId = savedHero;
+  studioBundleItems.forEach(item => {
+    const el = document.getElementById('sbi-'+item.id);
+    if(el){ applyT(el,item); if(item.zIndex) el.style.zIndex=item.zIndex; }
+  });
+}
+
+function mountStudioItem(item) {
+  const canvas = document.getElementById('studio-bcanvas');
+  let el = document.getElementById('sbi-'+item.id);
+  if (!el) {
+    el = document.createElement('div');
+    el.className = 'bitem'; el.id = 'sbi-'+item.id;
+    el.dataset.id = item.id; el.dataset.studio = '1';
+    el.innerHTML = `<img src="${item.src}" crossorigin="anonymous">
+      <div class="handle nw" data-h="nw"></div><div class="handle ne" data-h="ne"></div>
+      <div class="handle sw" data-h="sw"></div><div class="handle se" data-h="se"></div>
+      <div class="handle n" data-h="n"></div><div class="handle s" data-h="s"></div>
+      <div class="handle e" data-h="e"></div><div class="handle w" data-h="w"></div>
+      <div class="handle rot" data-h="rot"></div>`;
+    canvas.appendChild(el);
   }
+  if(item.zIndex) el.style.zIndex = item.zIndex;
+  applyT(el, item);
+}
+
+function studioCanvasDown(e) {
+  const itemEl = e.target.closest('[data-studio]');
+  if (!itemEl) return;
+  if (e.detail === 2) {
+    const id = parseInt(itemEl.dataset.id);
+    studioManualHeroId = id;
+    const idx = studioBundleItems.findIndex(it => it.id === id);
+    if (idx >= 0) {
+      const [hero] = studioBundleItems.splice(idx,1);
+      studioBundleItems.unshift(hero);
+      renderStudioCanvas();
+      toast('Studio hero set');
+    }
+    return;
+  }
+  // Pass drag to bundle drag system using studio item
+  const item = studioBundleItems.find(it => it.id === parseInt(itemEl.dataset.id));
+  if (item) startDrag(e, item, itemEl);
+}
+
+function selectBackdrop(style, label) {
+  selectedBackdrop = style;
+  document.querySelectorAll('.backdrop-opt').forEach(l => l.classList.remove('active'));
+  label.classList.add('active');
+}
+
+function getLayoutDescription() {
+  const canvas = document.getElementById('studio-bcanvas');
+  const W = canvas.offsetWidth, H = canvas.offsetHeight;
+  return studioBundleItems.map((item, i) => {
+    const xPct = Math.round((item.x + item.w/2) / W * 100);
+    const yPct = Math.round((item.y + item.h/2) / H * 100);
+    const sizePct = Math.round(item.w / W * 100);
+    const pos = xPct < 35 ? 'left' : xPct > 65 ? 'right' : 'centre';
+    const depth = yPct < 35 ? 'background' : yPct > 65 ? 'foreground' : 'midground';
+    return `Item ${i+1}${i===0?' (hero)':''}: ${pos}, ${depth}, size ~${sizePct}% of frame, angle ${Math.round(item.angle)}deg`;
+  }).join('; ');
 }
 
 // ── Studio Shoot ───────────────────────────────────────────────────────────────
 async function runStudioShoot() {
   if (!extractedImageUrls.length) { toast("No product images — run Let's go first"); return; }
+  const key = getKey();
+  if (!key) { toast('Add your Gemini API key in Settings ⚙️'); return; }
+
   const btn = document.getElementById('studio-btn');
   btn.disabled = true;
   document.getElementById('studio-loading').classList.remove('hidden');
   document.getElementById('studio-result').classList.add('hidden');
-  setSt('studio','Rendering studio shot...');
+  setSt('loading','Generating studio shot...');
+
+  // Progress bar animation
+  let prog = 0;
+  const bar = document.getElementById('studio-progress');
+  const ticker = setInterval(() => { prog = Math.min(prog+1.5, 88); bar.style.width=prog+'%'; }, 300);
+
   try {
-    const result = await renderStudio(extractedImageUrls, document.getElementById('studio-style').value);
-    document.getElementById('studio-img').src = result;
-    document.getElementById('studio-result').classList.remove('hidden');
-    setSt('done','Studio shot ready');
+    const result = await generateStudioWithGemini(extractedImageUrls, getLayoutDescription(), selectedBackdrop);
+    clearInterval(ticker); bar.style.width='100%';
+    setTimeout(() => {
+      document.getElementById('studio-img').src = result;
+      document.getElementById('studio-result').classList.remove('hidden');
+      document.getElementById('studio-loading').classList.add('hidden');
+      setSt('done','Studio shot ready');
+    }, 400);
   } catch(e) {
-    setSt('error',`Render failed — ${e.message}`);
-  } finally {
+    clearInterval(ticker);
     document.getElementById('studio-loading').classList.add('hidden');
+    const msg = e.message.includes('billing') || e.message.includes('quota') || e.message.includes('RESOURCE_EXHAUSTED')
+      ? 'Gemini image generation requires billing enabled on your API key'
+      : `Generation failed — ${e.message}`;
+    setSt('error', msg);
+  } finally {
     btn.disabled = false;
   }
+}
+
+async function generateStudioWithGemini(imageUrls, layoutDesc, backdrop) {
+  const key = getKey();
+  const backdropDesc = {
+    white:'clean seamless white studio background with soft floor sweep',
+    warm:'warm cream and sand toned studio background',
+    dark:'dramatic dark studio background with subtle key light',
+    gradient:'soft cool blue-grey gradient studio background',
+  }[backdrop] || 'clean white studio background';
+
+  const prompt = `You are a professional product photographer and compositor.
+I have ${imageUrls.length} product images with transparent backgrounds.
+The designer has arranged them in this approximate layout: ${layoutDesc}
+
+Generate a single photoreal studio product shot that:
+- Combines all products into one cohesive composition
+- Follows the designer's layout as a guide (hero product prominent)
+- Uses a ${backdropDesc}
+- Adds realistic studio lighting, soft shadows and subtle reflections
+- Makes all products look like they were shot together in the same studio session
+- Maintains realistic size proportions between products
+- Looks like a professional commercial product photograph
+
+Output only the final composite image.`;
+
+  // Convert dataURLs to base64 parts
+  const parts = imageUrls.map(url => ({
+    inline_data: { mime_type:'image/png', data: url.replace(/^data:image\/\w+;base64,/,'') }
+  })).filter(p => p.inline_data.data.length > 10);
+
+  const res = await fetch(
+    `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-preview-image-generation:generateContent?key=${key}`,
+    {
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({
+        contents:[{ parts:[...parts, {text:prompt}] }],
+        generationConfig:{ responseModalities:['image','text'] }
+      })
+    }
+  );
+
+  if (!res.ok) {
+    const err = await res.json().catch(()=>({}));
+    throw new Error(err.error?.message || `API error ${res.status}`);
+  }
+
+  const data = await res.json();
+  const imgPart = data.candidates?.[0]?.content?.parts?.find(p => p.inline_data?.mime_type?.startsWith('image/'));
+  if (!imgPart) throw new Error('No image returned — check billing is enabled on your Gemini key');
+  return `data:${imgPart.inline_data.mime_type};base64,${imgPart.inline_data.data}`;
+}
+
+function dlStudio() {
+  const img = document.getElementById('studio-img');
+  if (!img.src || img.src === window.location.href) return;
+  const a = document.createElement('a'); a.href=img.src;
+  a.download='studio-shoot-'+Date.now()+'.png'; a.click();
+}
+function cpStudio() {
+  const img = document.getElementById('studio-img');
+  if (!img.src) return;
+  fetch(img.src).then(r=>r.blob()).then(blob=>{
+    navigator.clipboard.write([new ClipboardItem({'image/png':blob})]);
+    toast('Studio shot copied');
+  });
 }
 
 async function renderStudio(urls, style) {
