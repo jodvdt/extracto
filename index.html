@@ -4,206 +4,160 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Extracto</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Syne:wght@400;500;700&display=swap" rel="stylesheet">
 <style>
-  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+:root{
+  --bg:#0b0b0b;--surface:#141414;--surface2:#1c1c1c;--surface3:#222;
+  --border:rgba(255,255,255,0.07);--border2:rgba(255,255,255,0.12);
+  --text:#efefef;--muted:#777;--muted2:#444;
+  --accent:#c8f53a;--accent-dim:rgba(200,245,58,0.1);--accent-border:rgba(200,245,58,0.25);
+  --studio:#a78bfa;--studio-dim:rgba(167,139,250,0.1);--studio-border:rgba(167,139,250,0.3);
+  --danger:#f55a5a;--success:#3af5a0;
+  --font:'Syne',sans-serif;--mono:'DM Mono',monospace;--rad:10px;--rad-lg:16px;
+}
+html,body{background:var(--bg);color:var(--text);font-family:var(--font);min-height:100vh;-webkit-font-smoothing:antialiased;}
+.page{min-height:100vh;display:flex;flex-direction:column;align-items:center;padding:3rem 1.5rem 5rem;}
+.container{width:100%;max-width:620px;}
 
-  :root {
-    --bg: #0b0b0b;
-    --surface: #141414;
-    --surface2: #1c1c1c;
-    --surface3: #222;
-    --border: rgba(255,255,255,0.07);
-    --border2: rgba(255,255,255,0.12);
-    --text: #efefef;
-    --muted: #777;
-    --muted2: #444;
-    --accent: #c8f53a;
-    --accent-dim: rgba(200,245,58,0.1);
-    --accent-border: rgba(200,245,58,0.25);
-    --studio: #a78bfa;
-    --studio-dim: rgba(167,139,250,0.1);
-    --studio-border: rgba(167,139,250,0.3);
-    --danger: #f55a5a;
-    --success: #3af5a0;
-    --font: 'Syne', sans-serif;
-    --mono: 'DM Mono', monospace;
-    --rad: 10px;
-    --rad-lg: 16px;
-  }
+/* Header */
+.header{display:flex;align-items:center;justify-content:space-between;margin-bottom:2.5rem;}
+.logo{display:flex;align-items:center;gap:12px;}
+.logo-mark{width:36px;height:36px;background:var(--accent);border-radius:9px;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+.logo-name{font-size:18px;font-weight:700;letter-spacing:-0.4px;}
+.logo-sub{font-size:11px;color:var(--muted);font-family:var(--mono);text-transform:uppercase;letter-spacing:.6px;margin-top:1px;}
+.cog-btn{width:34px;height:34px;background:var(--surface);border:0.5px solid var(--border2);border-radius:8px;display:flex;align-items:center;justify-content:center;cursor:pointer;color:var(--muted);transition:all .15s;flex-shrink:0;}
+.cog-btn:hover{border-color:var(--accent-border);color:var(--accent);}
 
-  html, body { background: var(--bg); color: var(--text); font-family: var(--font); min-height: 100vh; font-size: 15px; line-height: 1.6; -webkit-font-smoothing: antialiased; }
+/* Settings */
+.settings-panel{background:var(--surface);border:0.5px solid var(--border2);border-radius:var(--rad-lg);padding:1.25rem 1.5rem;margin-bottom:1rem;}
+.settings-row{display:flex;align-items:center;gap:10px;margin-bottom:10px;}
+.settings-row:last-of-type{margin-bottom:0;}
+.settings-lbl{font-size:11px;font-family:var(--mono);color:var(--muted);min-width:110px;}
+.settings-input{flex:1;background:var(--surface2);border:0.5px solid var(--border2);border-radius:7px;padding:8px 12px;color:var(--text);font-family:var(--mono);font-size:12px;outline:none;transition:border-color .2s;}
+.settings-input:focus{border-color:var(--accent-border);}
+.settings-input::placeholder{color:var(--muted2);}
+.save-btn{padding:7px 16px;background:var(--accent);border:none;border-radius:7px;color:#0b0b0b;font-family:var(--font);font-size:12px;font-weight:700;cursor:pointer;white-space:nowrap;}
+.save-btn:hover{opacity:.85;}
+.settings-note{font-size:11px;font-family:var(--mono);color:var(--muted);margin-top:10px;line-height:1.6;padding:8px 12px;background:var(--surface2);border-radius:6px;border-left:2px solid var(--accent-border);}
 
-  .page { min-height: 100vh; display: flex; flex-direction: column; align-items: center; padding: 3rem 1.5rem 5rem; }
-  .container { width: 100%; max-width: 620px; }
+/* Input card */
+.input-card{background:var(--surface);border:0.5px solid var(--border2);border-radius:var(--rad-lg);padding:1.5rem;margin-bottom:1rem;}
+.field-label{font-size:10px;font-family:var(--mono);text-transform:uppercase;letter-spacing:1.4px;color:var(--muted);margin-bottom:8px;display:block;}
+textarea{width:100%;background:var(--surface2);border:0.5px solid var(--border2);border-radius:var(--rad);padding:14px 16px;color:var(--text);font-family:var(--font);font-size:14px;line-height:1.65;resize:none;outline:none;transition:border-color .18s;min-height:160px;margin-bottom:1rem;}
+textarea::placeholder{color:var(--muted2);}
+textarea:focus{border-color:var(--accent-border);}
+textarea.shake{animation:shake .35s ease;border-color:var(--danger);}
+@keyframes shake{0%,100%{transform:translateX(0)}20%{transform:translateX(-6px)}40%{transform:translateX(6px)}60%{transform:translateX(-4px)}80%{transform:translateX(4px)}}
+.controls{display:flex;gap:10px;align-items:stretch;}
+.select-wrap{position:relative;flex:1;}
+select{width:100%;height:44px;background:var(--surface2);border:0.5px solid var(--border2);border-radius:var(--rad);padding:0 36px 0 13px;color:var(--text);font-family:var(--font);font-size:14px;cursor:pointer;appearance:none;-webkit-appearance:none;outline:none;}
+.select-arrow{position:absolute;right:12px;top:50%;transform:translateY(-50%);pointer-events:none;color:var(--muted);}
+.go-btn{height:44px;padding:0 22px;background:var(--accent);border:none;border-radius:var(--rad);color:#0b0b0b;font-family:var(--font);font-size:14px;font-weight:700;cursor:pointer;white-space:nowrap;transition:opacity .15s,transform .1s;flex-shrink:0;}
+.go-btn:hover{opacity:.84;}
+.go-btn:active{transform:scale(.97);}
+.go-btn:disabled{opacity:.35;cursor:not-allowed;transform:none;}
+.hint{margin-top:10px;font-size:12px;color:var(--muted);font-family:var(--mono);line-height:1.5;min-height:18px;}
 
-  /* Header */
-  .header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 2.5rem; }
-  .logo { display: flex; align-items: center; gap: 12px; }
-  .logo-mark { width: 36px; height: 36px; background: var(--accent); border-radius: 9px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
-  .logo-name { font-size: 18px; font-weight: 700; letter-spacing: -0.4px; }
-  .logo-sub { font-size: 11px; color: var(--muted); font-family: var(--mono); text-transform: uppercase; letter-spacing: 0.6px; margin-top: 1px; }
-  .settings-btn { width: 34px; height: 34px; background: var(--surface); border: 0.5px solid var(--border2); border-radius: 8px; display: flex; align-items: center; justify-content: center; cursor: pointer; transition: border-color .15s; color: var(--muted); flex-shrink: 0; }
-  .settings-btn:hover { border-color: var(--accent-border); color: var(--accent); }
+/* Status */
+.status-bar{display:flex;align-items:center;gap:10px;padding:11px 14px;background:var(--surface);border:0.5px solid var(--border);border-radius:var(--rad);font-size:12px;font-family:var(--mono);color:var(--muted);margin-bottom:1rem;min-height:40px;transition:border-color .2s;}
+.status-bar.active{border-color:var(--accent-border);}
+.status-bar.done{border-color:rgba(58,245,160,.25);}
+.status-bar.err{border-color:rgba(245,90,90,.25);}
+.status-bar.studio-active{border-color:var(--studio-border);}
+.sdot{width:7px;height:7px;border-radius:50%;background:var(--muted2);flex-shrink:0;transition:background .2s;}
+.sdot.pulse{background:var(--accent);animation:blink 1.1s ease-in-out infinite;}
+.sdot.studio-pulse{background:var(--studio);animation:blink 1.1s ease-in-out infinite;}
+.sdot.done{background:var(--success);}
+.sdot.err{background:var(--danger);}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:.2}}
 
-  /* Settings panel */
-  .settings-panel { background: var(--surface); border: 0.5px solid var(--border2); border-radius: var(--rad-lg); padding: 1.25rem 1.5rem; margin-bottom: 1rem; }
-  .settings-title { font-size: 12px; font-weight: 500; margin-bottom: 1rem; color: var(--text); }
-  .settings-row { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; }
-  .settings-row:last-child { margin-bottom: 0; }
-  .settings-label { font-size: 11px; font-family: var(--mono); color: var(--muted); min-width: 110px; }
-  .settings-input { flex: 1; background: var(--surface2); border: 0.5px solid var(--border2); border-radius: 7px; padding: 8px 12px; color: var(--text); font-family: var(--mono); font-size: 12px; outline: none; transition: border-color .2s; }
-  .settings-input:focus { border-color: var(--accent-border); }
-  .settings-input::placeholder { color: var(--muted2); }
-  .save-btn { padding: 7px 16px; background: var(--accent); border: none; border-radius: 7px; color: #0b0b0b; font-family: var(--font); font-size: 12px; font-weight: 700; cursor: pointer; transition: opacity .15s; white-space: nowrap; }
-  .save-btn:hover { opacity: .85; }
-  .settings-note { font-size: 11px; font-family: var(--mono); color: var(--muted); margin-top: 10px; line-height: 1.6; padding: 8px 12px; background: var(--surface2); border-radius: 6px; border-left: 2px solid var(--accent-border); }
+/* Log */
+.pipeline{background:var(--surface);border:0.5px solid var(--border);border-radius:var(--rad);padding:10px 14px;margin-bottom:1rem;max-height:110px;overflow-y:auto;}
+.pipeline::-webkit-scrollbar{width:3px;}
+.pipeline::-webkit-scrollbar-thumb{background:var(--muted2);border-radius:2px;}
+.log-line{font-size:11px;font-family:var(--mono);color:var(--muted);line-height:1.7;display:flex;align-items:baseline;gap:8px;}
+.tag{font-size:9px;padding:1px 5px;border-radius:3px;flex-shrink:0;letter-spacing:.3px;}
+.tag-ok{background:rgba(58,245,160,.12);color:var(--success);border:0.5px solid rgba(58,245,160,.2);}
+.tag-fail{background:rgba(245,90,90,.1);color:var(--danger);border:0.5px solid rgba(245,90,90,.2);}
+.tag-try{background:var(--accent-dim);color:var(--accent);border:0.5px solid var(--accent-border);}
+.tag-ai{background:var(--studio-dim);color:var(--studio);border:0.5px solid var(--studio-border);}
 
-  /* Input card */
-  .input-card { background: var(--surface); border: 0.5px solid var(--border2); border-radius: var(--rad-lg); padding: 1.5rem; margin-bottom: 1rem; }
-  .field-label { font-size: 10px; font-family: var(--mono); text-transform: uppercase; letter-spacing: 1.4px; color: var(--muted); margin-bottom: 8px; display: block; }
+/* Grid */
+.results-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;}
+.rcnt{font-size:11px;color:var(--muted);font-family:var(--mono);}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(155px,1fr));gap:10px;margin-bottom:1.5rem;}
+.img-card{background:var(--surface);border:0.5px solid var(--border2);border-radius:var(--rad);aspect-ratio:1;position:relative;overflow:hidden;display:flex;align-items:center;justify-content:center;transition:border-color .15s;}
+.img-card:hover{border-color:var(--accent-border);}
+.checker{position:absolute;inset:0;background-image:linear-gradient(45deg,#222 25%,transparent 25%),linear-gradient(-45deg,#222 25%,transparent 25%),linear-gradient(45deg,transparent 75%,#222 75%),linear-gradient(-45deg,transparent 75%,#222 75%);background-size:14px 14px;background-position:0 0,0 7px,7px -7px,-7px 0;opacity:.6;}
+.img-card img{position:relative;z-index:2;max-width:86%;max-height:86%;object-fit:contain;display:block;}
+.card-ov{position:absolute;inset:0;background:rgba(11,11,11,.86);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:7px;opacity:0;transition:opacity .15s;z-index:3;}
+.img-card:hover .card-ov{opacity:1;}
+.ov-btn{padding:6px 14px;border-radius:6px;border:0.5px solid var(--accent-border);background:var(--accent-dim);color:var(--accent);font-family:var(--font);font-size:11px;font-weight:500;cursor:pointer;transition:all .15s;width:118px;text-align:center;}
+.ov-btn:hover{background:var(--accent);color:#0b0b0b;}
+.clbl{position:absolute;bottom:7px;left:7px;right:7px;font-size:9px;font-family:var(--mono);color:var(--muted);text-align:center;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;z-index:4;}
+.cbadge{position:absolute;top:7px;right:7px;padding:2px 6px;border-radius:4px;font-size:9px;font-family:var(--mono);letter-spacing:.3px;z-index:5;background:var(--accent-dim);border:0.5px solid var(--accent-border);color:var(--accent);}
+.cbadge.fail{background:rgba(245,90,90,.1);border-color:rgba(245,90,90,.3);color:var(--danger);}
 
-  textarea { width: 100%; background: var(--surface2); border: 0.5px solid var(--border2); border-radius: var(--rad); padding: 14px 16px; color: var(--text); font-family: var(--font); font-size: 14px; line-height: 1.65; resize: none; outline: none; transition: border-color .18s; min-height: 160px; margin-bottom: 1rem; }
-  textarea::placeholder { color: var(--muted2); }
-  textarea:focus { border-color: var(--accent-border); }
-  textarea.shake { animation: shake .35s ease; border-color: var(--danger); }
-  @keyframes shake { 0%,100%{transform:translateX(0)} 20%{transform:translateX(-6px)} 40%{transform:translateX(6px)} 60%{transform:translateX(-4px)} 80%{transform:translateX(4px)} }
+/* Bundle canvas */
+.bundle-wrap{background:var(--surface);border:0.5px solid var(--border2);border-radius:var(--rad-lg);padding:1rem;margin-bottom:1rem;}
+.bundle-canvas{width:100%;aspect-ratio:4/3;background:#111;background-image:linear-gradient(45deg,#181818 25%,transparent 25%),linear-gradient(-45deg,#181818 25%,transparent 25%),linear-gradient(45deg,transparent 75%,#181818 75%),linear-gradient(-45deg,transparent 75%,#181818 75%);background-size:20px 20px;background-position:0 0,0 10px,10px -10px,-10px 0;border-radius:8px;position:relative;overflow:hidden;user-select:none;}
+.bitem{position:absolute;transform-origin:center center;cursor:grab;}
+.bitem:active{cursor:grabbing;}
+.bitem img{width:100%;height:100%;object-fit:contain;display:block;pointer-events:none;}
+.bitem.sel{outline:1.5px solid var(--accent);outline-offset:0;}
+.bitem.sel::before{content:'';position:absolute;top:-22px;left:50%;transform:translateX(-50%);width:1px;height:18px;background:var(--accent);opacity:.5;}
+.handle{position:absolute;width:10px;height:10px;background:var(--bg);border:1.5px solid var(--accent);border-radius:2px;z-index:10;display:none;}
+.bitem.sel .handle{display:block;}
+.handle.nw{top:-5px;left:-5px;cursor:nw-resize;}
+.handle.ne{top:-5px;right:-5px;cursor:ne-resize;}
+.handle.sw{bottom:-5px;left:-5px;cursor:sw-resize;}
+.handle.se{bottom:-5px;right:-5px;cursor:se-resize;}
+.handle.n{top:-5px;left:50%;transform:translateX(-50%);cursor:n-resize;}
+.handle.s{bottom:-5px;left:50%;transform:translateX(-50%);cursor:s-resize;}
+.handle.e{right:-5px;top:50%;transform:translateY(-50%);cursor:e-resize;}
+.handle.w{left:-5px;top:50%;transform:translateY(-50%);cursor:w-resize;}
+.handle.rot{top:-28px;left:50%;transform:translateX(-50%);border-radius:50%;cursor:grab;background:var(--accent);border-color:var(--accent);width:12px;height:12px;}
+.bcontrols{display:flex;gap:8px;margin-top:10px;flex-wrap:wrap;align-items:center;}
+.cbtn{padding:7px 14px;background:var(--surface2);border:0.5px solid var(--border2);border-radius:7px;color:var(--text);font-family:var(--font);font-size:12px;cursor:pointer;transition:all .15s;}
+.cbtn:hover{border-color:var(--accent-border);color:var(--accent);}
+.cbtn.primary{background:var(--accent);color:#0b0b0b;border-color:transparent;font-weight:700;margin-left:auto;}
+.cbtn.primary:hover{opacity:.85;color:#0b0b0b;}
 
-  .controls { display: flex; gap: 10px; align-items: stretch; }
-  .select-wrap { position: relative; flex: 1; }
+/* Studio */
+.studio-section{background:var(--surface);border:0.5px solid var(--studio-border);border-radius:var(--rad-lg);padding:1.25rem 1.5rem;margin-bottom:1rem;}
+.studio-header{display:flex;align-items:center;gap:10px;margin-bottom:1rem;}
+.studio-dot{width:8px;height:8px;border-radius:50%;background:var(--studio);flex-shrink:0;}
+.studio-title{font-size:13px;font-weight:500;color:var(--studio);}
+.studio-sub{font-size:11px;color:var(--muted);font-family:var(--mono);margin-top:1px;}
+.studio-modes{display:flex;gap:8px;margin-bottom:1rem;}
+.smode-btn{flex:1;padding:10px 12px;background:var(--surface2);border:0.5px solid var(--border2);border-radius:8px;color:var(--muted);font-family:var(--font);font-size:12px;cursor:pointer;transition:all .15s;text-align:center;line-height:1.4;}
+.smode-btn .mn{font-weight:500;color:var(--text);display:block;margin-bottom:2px;}
+.smode-btn .md{font-size:11px;font-family:var(--mono);}
+.smode-btn.active{border-color:var(--studio-border);background:var(--studio-dim);}
+.smode-btn.active .mn{color:var(--studio);}
+.studio-generate-btn{width:100%;padding:12px;background:var(--studio);border:none;border-radius:var(--rad);color:#0b0b0b;font-family:var(--font);font-size:14px;font-weight:700;cursor:pointer;transition:opacity .15s,transform .1s;display:flex;align-items:center;justify-content:center;gap:8px;}
+.studio-generate-btn:hover{opacity:.85;}
+.studio-generate-btn:active{transform:scale(.98);}
+.studio-generate-btn:disabled{opacity:.35;cursor:not-allowed;transform:none;}
+.studio-loading{width:100%;aspect-ratio:4/3;border-radius:8px;background:var(--surface2);border:0.5px solid var(--studio-border);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;margin-top:1rem;}
+.shimmer-bar{height:3px;width:120px;background:var(--surface3);border-radius:2px;overflow:hidden;}
+.shimmer-inner{height:100%;width:40%;background:var(--studio);border-radius:2px;animation:shimmer 1.4s ease-in-out infinite;}
+@keyframes shimmer{0%{transform:translateX(-100%)}100%{transform:translateX(350%)}}
+.studio-loading-txt{font-size:12px;font-family:var(--mono);color:var(--muted);}
+.studio-result{margin-top:1rem;}
+.studio-img-wrap{background:#fff;border-radius:8px;overflow:hidden;}
+.studio-img-wrap img{width:100%;display:block;}
+.studio-dl-row{display:flex;gap:8px;margin-top:10px;}
+.studio-dl-btn{flex:1;padding:9px;background:var(--surface2);border:0.5px solid var(--studio-border);border-radius:7px;color:var(--studio);font-family:var(--font);font-size:12px;font-weight:500;cursor:pointer;transition:all .15s;text-align:center;}
+.studio-dl-btn:hover{background:var(--studio);color:#0b0b0b;}
 
-  select { width: 100%; height: 44px; background: var(--surface2); border: 0.5px solid var(--border2); border-radius: var(--rad); padding: 0 36px 0 13px; color: var(--text); font-family: var(--font); font-size: 14px; cursor: pointer; appearance: none; -webkit-appearance: none; outline: none; transition: border-color .15s; }
-  select:focus { border-color: var(--accent-border); }
-
-  .select-arrow { position: absolute; right: 12px; top: 50%; transform: translateY(-50%); pointer-events: none; color: var(--muted); display: flex; align-items: center; }
-
-  .go-btn { height: 44px; padding: 0 22px; background: var(--accent); border: none; border-radius: var(--rad); color: #0b0b0b; font-family: var(--font); font-size: 14px; font-weight: 700; letter-spacing: -0.1px; cursor: pointer; white-space: nowrap; transition: opacity .15s, transform .1s; flex-shrink: 0; }
-  .go-btn:hover { opacity: .84; }
-  .go-btn:active { transform: scale(.97); }
-  .go-btn:disabled { opacity: .35; cursor: not-allowed; transform: none; }
-  .go-btn.studio-mode { background: var(--studio); }
-
-  .hint { margin-top: 10px; font-size: 12px; color: var(--muted); font-family: var(--mono); line-height: 1.5; min-height: 18px; }
-
-  /* Status */
-  .status-bar { display: flex; align-items: center; gap: 10px; padding: 11px 14px; background: var(--surface); border: 0.5px solid var(--border); border-radius: var(--rad); font-size: 12px; font-family: var(--mono); color: var(--muted); margin-bottom: 1rem; min-height: 40px; transition: border-color .2s; }
-  .status-bar.active { border-color: var(--accent-border); }
-  .status-bar.done { border-color: rgba(58,245,160,0.25); }
-  .status-bar.err { border-color: rgba(245,90,90,0.25); }
-  .status-bar.studio-active { border-color: var(--studio-border); }
-
-  .status-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--muted2); flex-shrink: 0; transition: background .2s; }
-  .status-dot.pulse { background: var(--accent); animation: blink 1.1s ease-in-out infinite; }
-  .status-dot.studio-pulse { background: var(--studio); animation: blink 1.1s ease-in-out infinite; }
-  .status-dot.done { background: var(--success); }
-  .status-dot.err { background: var(--danger); }
-  @keyframes blink { 0%,100%{opacity:1} 50%{opacity:.2} }
-
-  /* Pipeline log */
-  .pipeline { background: var(--surface); border: 0.5px solid var(--border); border-radius: var(--rad); padding: 10px 14px; margin-bottom: 1rem; max-height: 110px; overflow-y: auto; }
-  .pipeline::-webkit-scrollbar { width: 3px; }
-  .pipeline::-webkit-scrollbar-thumb { background: var(--muted2); border-radius: 2px; }
-  .log-line { font-size: 11px; font-family: var(--mono); color: var(--muted); line-height: 1.7; display: flex; align-items: baseline; gap: 8px; }
-  .tag { font-size: 9px; padding: 1px 5px; border-radius: 3px; flex-shrink: 0; letter-spacing: .3px; }
-  .tag-ok   { background: rgba(58,245,160,0.12); color: var(--success); border: 0.5px solid rgba(58,245,160,.2); }
-  .tag-fail { background: rgba(245,90,90,0.1); color: var(--danger); border: 0.5px solid rgba(245,90,90,.2); }
-  .tag-try  { background: var(--accent-dim); color: var(--accent); border: 0.5px solid var(--accent-border); }
-  .tag-ai   { background: var(--studio-dim); color: var(--studio); border: 0.5px solid var(--studio-border); }
-
-  /* Results grid */
-  .results-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; }
-  .results-count { font-size: 11px; color: var(--muted); font-family: var(--mono); }
-  .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(155px, 1fr)); gap: 10px; margin-bottom: 1.5rem; }
-
-  /* Image cards */
-  .img-card { background: var(--surface); border: 0.5px solid var(--border2); border-radius: var(--rad); aspect-ratio: 1; position: relative; overflow: hidden; display: flex; align-items: center; justify-content: center; transition: border-color .15s; }
-  .img-card:hover { border-color: var(--accent-border); }
-  .checker { position: absolute; inset: 0; background-image: linear-gradient(45deg,#222 25%,transparent 25%),linear-gradient(-45deg,#222 25%,transparent 25%),linear-gradient(45deg,transparent 75%,#222 75%),linear-gradient(-45deg,transparent 75%,#222 75%); background-size: 14px 14px; background-position: 0 0,0 7px,7px -7px,-7px 0; opacity: .6; }
-  .img-card img { position: relative; z-index: 2; max-width: 86%; max-height: 86%; object-fit: contain; display: block; }
-  .img-overlay { position: absolute; inset: 0; background: rgba(11,11,11,.86); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 7px; opacity: 0; transition: opacity .15s; z-index: 3; }
-  .img-card:hover .img-overlay { opacity: 1; }
-  .img-action { padding: 6px 14px; border-radius: 6px; border: 0.5px solid var(--accent-border); background: var(--accent-dim); color: var(--accent); font-family: var(--font); font-size: 11px; font-weight: 500; cursor: pointer; transition: all .15s; width: 118px; text-align: center; }
-  .img-action:hover { background: var(--accent); color: #0b0b0b; }
-  .img-label { position: absolute; bottom: 7px; left: 7px; right: 7px; font-size: 9px; font-family: var(--mono); color: var(--muted); text-align: center; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; z-index: 4; }
-  .card-badge { position: absolute; top: 7px; right: 7px; padding: 2px 6px; border-radius: 4px; font-size: 9px; font-family: var(--mono); letter-spacing: .3px; z-index: 5; background: var(--accent-dim); border: 0.5px solid var(--accent-border); color: var(--accent); }
-  .card-badge.fail { background: rgba(245,90,90,.1); border-color: rgba(245,90,90,.3); color: var(--danger); }
-
-  /* Bundle canvas */
-  .bundle-wrap { background: var(--surface); border: 0.5px solid var(--border2); border-radius: var(--rad-lg); padding: 1rem; margin-bottom: 1rem; }
-  .bundle-canvas { width: 100%; aspect-ratio: 4/3; background: #111; background-image: linear-gradient(45deg,#181818 25%,transparent 25%),linear-gradient(-45deg,#181818 25%,transparent 25%),linear-gradient(45deg,transparent 75%,#181818 75%),linear-gradient(-45deg,transparent 75%,#181818 75%); background-size: 20px 20px; background-position: 0 0,0 10px,10px -10px,-10px 0; border-radius: 8px; position: relative; overflow: hidden; user-select: none; }
-
-  /* Bundle items + transform handles */
-  .bitem { position: absolute; transform-origin: center center; cursor: grab; }
-  .bitem:active { cursor: grabbing; }
-  .bitem img { width: 100%; height: 100%; object-fit: contain; display: block; pointer-events: none; }
-  .bitem.sel { outline: 1.5px solid var(--accent); outline-offset: 0; }
-  .bitem.sel::before { content: ''; position: absolute; top: -22px; left: 50%; transform: translateX(-50%); width: 1px; height: 18px; background: var(--accent); opacity: .5; }
-
-  .handle { position: absolute; width: 10px; height: 10px; background: var(--bg); border: 1.5px solid var(--accent); border-radius: 2px; z-index: 10; display: none; }
-  .bitem.sel .handle { display: block; }
-  .handle.nw { top:-5px; left:-5px; cursor:nw-resize; }
-  .handle.ne { top:-5px; right:-5px; cursor:ne-resize; }
-  .handle.sw { bottom:-5px; left:-5px; cursor:sw-resize; }
-  .handle.se { bottom:-5px; right:-5px; cursor:se-resize; }
-  .handle.n  { top:-5px; left:50%; transform:translateX(-50%); cursor:n-resize; }
-  .handle.s  { bottom:-5px; left:50%; transform:translateX(-50%); cursor:s-resize; }
-  .handle.e  { right:-5px; top:50%; transform:translateY(-50%); cursor:e-resize; }
-  .handle.w  { left:-5px; top:50%; transform:translateY(-50%); cursor:w-resize; }
-  .handle.rot { top:-28px; left:50%; transform:translateX(-50%); border-radius:50%; cursor:grab; background:var(--accent); border-color:var(--accent); width:12px; height:12px; }
-  .handle.rot:active { cursor: grabbing; }
-
-  .bundle-controls { display: flex; gap: 8px; margin-top: 10px; flex-wrap: wrap; align-items: center; }
-  .cbtn { padding: 7px 14px; background: var(--surface2); border: 0.5px solid var(--border2); border-radius: 7px; color: var(--text); font-family: var(--font); font-size: 12px; cursor: pointer; transition: all .15s; }
-  .cbtn:hover { border-color: var(--accent-border); color: var(--accent); }
-  .cbtn.primary { background: var(--accent); color: #0b0b0b; border-color: transparent; font-weight: 700; margin-left: auto; }
-  .cbtn.primary:hover { opacity: .85; color: #0b0b0b; }
-
-  /* Studio section */
-  .studio-section { background: var(--surface); border: 0.5px solid var(--studio-border); border-radius: var(--rad-lg); padding: 1.25rem 1.5rem; margin-bottom: 1rem; }
-  .studio-header { display: flex; align-items: center; gap: 10px; margin-bottom: 1rem; }
-  .studio-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--studio); flex-shrink: 0; }
-  .studio-title { font-size: 13px; font-weight: 500; color: var(--studio); }
-  .studio-sub { font-size: 11px; color: var(--muted); font-family: var(--mono); margin-top: 1px; }
-
-  .studio-modes { display: flex; gap: 8px; margin-bottom: 1rem; }
-  .studio-mode-btn { flex: 1; padding: 10px 12px; background: var(--surface2); border: 0.5px solid var(--border2); border-radius: 8px; color: var(--muted); font-family: var(--font); font-size: 12px; cursor: pointer; transition: all .15s; text-align: center; line-height: 1.4; }
-  .studio-mode-btn .mode-name { font-weight: 500; color: var(--text); display: block; margin-bottom: 2px; }
-  .studio-mode-btn .mode-desc { font-size: 11px; font-family: var(--mono); }
-  .studio-mode-btn.active { border-color: var(--studio-border); background: var(--studio-dim); }
-  .studio-mode-btn.active .mode-name { color: var(--studio); }
-
-  .studio-prompt-wrap { margin-bottom: 1rem; }
-  .studio-prompt { width: 100%; background: var(--surface2); border: 0.5px solid var(--border2); border-radius: 8px; padding: 10px 13px; color: var(--text); font-family: var(--mono); font-size: 12px; line-height: 1.6; resize: none; outline: none; transition: border-color .2s; min-height: 70px; }
-  .studio-prompt:focus { border-color: var(--studio-border); }
-
-  .studio-generate-btn { width: 100%; padding: 12px; background: var(--studio); border: none; border-radius: var(--rad); color: #0b0b0b; font-family: var(--font); font-size: 14px; font-weight: 700; cursor: pointer; transition: opacity .15s, transform .1s; display: flex; align-items: center; justify-content: center; gap: 8px; }
-  .studio-generate-btn:hover { opacity: .85; }
-  .studio-generate-btn:active { transform: scale(.98); }
-  .studio-generate-btn:disabled { opacity: .35; cursor: not-allowed; transform: none; }
-
-  /* Studio result */
-  .studio-result { margin-top: 1rem; }
-  .studio-img-wrap { background: #fff; border-radius: 8px; overflow: hidden; position: relative; }
-  .studio-img-wrap img { width: 100%; display: block; }
-  .studio-dl-row { display: flex; gap: 8px; margin-top: 10px; }
-  .studio-dl-btn { flex: 1; padding: 9px; background: var(--surface2); border: 0.5px solid var(--studio-border); border-radius: 7px; color: var(--studio); font-family: var(--font); font-size: 12px; font-weight: 500; cursor: pointer; transition: all .15s; text-align: center; }
-  .studio-dl-btn:hover { background: var(--studio); color: #0b0b0b; }
-
-  /* Studio loading shimmer */
-  .studio-loading { width: 100%; aspect-ratio: 4/3; border-radius: 8px; background: var(--surface2); border: 0.5px solid var(--studio-border); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 12px; margin-top: 1rem; }
-  .shimmer-bar { height: 3px; width: 120px; background: var(--surface3); border-radius: 2px; overflow: hidden; }
-  .shimmer-inner { height: 100%; width: 40%; background: var(--studio); border-radius: 2px; animation: shimmer 1.4s ease-in-out infinite; }
-  @keyframes shimmer { 0%{transform:translateX(-100%)} 100%{transform:translateX(350%)} }
-  .studio-loading-txt { font-size: 12px; font-family: var(--mono); color: var(--muted); }
-
-  hr { border: none; border-top: 0.5px solid var(--border); margin: 1.5rem 0; }
-  .hidden { display: none !important; }
+hr{border:none;border-top:0.5px solid var(--border);margin:1.5rem 0;}
+.hidden{display:none!important;}
 </style>
 </head>
 <body>
-<div class="page">
-<div class="container">
+<div class="page"><div class="container">
 
   <!-- Header -->
   <div class="header">
@@ -221,7 +175,7 @@
         <div class="logo-sub">Paste a brief or links. Get images.</div>
       </div>
     </div>
-    <button class="settings-btn" onclick="toggleSettings()" title="Settings">
+    <button class="cog-btn" onclick="toggleSettings()">
       <svg width="15" height="15" viewBox="0 0 15 15" fill="none">
         <circle cx="7.5" cy="7.5" r="2" stroke="currentColor" stroke-width="1.2"/>
         <path d="M7.5 1v1.5M7.5 12.5V14M1 7.5h1.5M12.5 7.5H14M2.9 2.9l1.1 1.1M11 11l1.1 1.1M2.9 12.1L4 11M11 4l1.1-1.1" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/>
@@ -229,18 +183,17 @@
     </button>
   </div>
 
-  <!-- Settings panel -->
+  <!-- Settings -->
   <div class="settings-panel hidden" id="settings-panel">
-    <div class="settings-title">API Keys</div>
     <div class="settings-row">
-      <span class="settings-label">Gemini API key</span>
+      <span class="settings-lbl">Gemini API key</span>
       <input type="password" class="settings-input" id="gemini-key-input" placeholder="AIzaSy..." autocomplete="off">
       <button class="save-btn" onclick="saveKeys()">Save</button>
     </div>
-    <div class="settings-note">Keys are saved to your browser only — never sent anywhere except directly to Google's API.</div>
+    <div class="settings-note">Saved to your browser only. Used for smart layout detection and image extraction from tricky sites. Free tier — no image generation needed.</div>
   </div>
 
-  <!-- Input card -->
+  <!-- Input -->
   <div class="input-card">
     <label class="field-label" for="brief">Brief or links</label>
     <textarea id="brief" placeholder="Paste your brief, product URLs, or a mix of both. Extracto handles the rest.
@@ -249,7 +202,6 @@ e.g.
 Summer sale — grab images for these:
 https://store.com/products/item-one
 https://anysite.com/product/item-two"></textarea>
-
     <div class="controls">
       <div class="select-wrap">
         <select id="mode" onchange="updateHint()">
@@ -258,9 +210,7 @@ https://anysite.com/product/item-two"></textarea>
           <option value="studio">Studio Shoot</option>
         </select>
         <div class="select-arrow">
-          <svg width="11" height="11" viewBox="0 0 11 11" fill="none">
-            <path d="M1.5 3.5L5.5 7.5L9.5 3.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
-          </svg>
+          <svg width="11" height="11" viewBox="0 0 11 11" fill="none"><path d="M1.5 3.5L5.5 7.5L9.5 3.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
         </div>
       </div>
       <button class="go-btn" id="go-btn" onclick="handleGo()">Let's go!</button>
@@ -269,19 +219,16 @@ https://anysite.com/product/item-two"></textarea>
   </div>
 
   <!-- Status -->
-  <div class="status-bar hidden" id="status-bar">
-    <div class="status-dot" id="status-dot"></div>
-    <span id="status-txt"></span>
-  </div>
+  <div class="status-bar hidden" id="sbar"><div class="sdot" id="sdot"></div><span id="stxt"></span></div>
 
-  <!-- Pipeline log -->
+  <!-- Log -->
   <div class="pipeline hidden" id="pipeline"></div>
 
   <!-- Extract results -->
   <div id="extract-results" class="hidden">
     <div class="results-header">
       <span class="field-label" style="margin:0">Extracted images</span>
-      <span class="results-count" id="extract-count"></span>
+      <span class="rcnt" id="rcnt"></span>
     </div>
     <div class="grid" id="extract-grid"></div>
   </div>
@@ -289,10 +236,10 @@ https://anysite.com/product/item-two"></textarea>
   <!-- Bundle results -->
   <div id="bundle-results" class="hidden">
     <hr>
-    <span class="field-label">Bundle canvas — drag to move, handles to resize &amp; rotate</span>
+    <span class="field-label">Bundle canvas — drag · resize · rotate</span>
     <div class="bundle-wrap">
-      <div class="bundle-canvas" id="bundle-canvas" onmousedown="canvasDown(event)"></div>
-      <div class="bundle-controls">
+      <div class="bundle-canvas" id="bcanvas" onmousedown="canvasDown(event)"></div>
+      <div class="bcontrols">
         <button class="cbtn" onclick="autoArrange()">Auto-arrange</button>
         <button class="cbtn" onclick="shuffleArrange()">Shuffle</button>
         <button class="cbtn" onclick="deselectAll()">Deselect</button>
@@ -301,60 +248,44 @@ https://anysite.com/product/item-two"></textarea>
     </div>
   </div>
 
-  <!-- Studio Shoot section -->
+  <!-- Studio -->
   <div id="studio-section" class="studio-section hidden">
     <div class="studio-header">
       <div class="studio-dot"></div>
       <div>
         <div class="studio-title">Studio Shoot</div>
-        <div class="studio-sub">AI-generated studio photography</div>
+        <div class="studio-sub">Client-side studio compositing</div>
       </div>
     </div>
-
     <div class="studio-modes">
-      <button class="studio-mode-btn active" id="mode-auto-btn" onclick="setStudioMode('auto')">
-        <span class="mode-name">Auto</span>
-        <span class="mode-desc">AI arranges everything</span>
+      <button class="smode-btn active" id="smode-auto" onclick="setStudioMode('auto')">
+        <span class="mn">Auto</span><span class="md">AI arranges everything</span>
       </button>
-      <button class="studio-mode-btn" id="mode-canvas-btn" onclick="setStudioMode('canvas')">
-        <span class="mode-name">Canvas first</span>
-        <span class="mode-desc">You arrange, AI renders</span>
+      <button class="smode-btn" id="smode-canvas" onclick="setStudioMode('canvas')">
+        <span class="mn">Canvas first</span><span class="md">You arrange, then render</span>
       </button>
     </div>
-
-    <div class="studio-prompt-wrap">
-      <label class="field-label" for="studio-style">Backdrop style</label>
-      <div style="position:relative;margin-bottom:1rem;">
-        <select id="studio-style" style="width:100%;height:40px;background:var(--surface2);border:0.5px solid var(--border2);border-radius:8px;padding:0 36px 0 13px;color:var(--text);font-family:var(--font);font-size:13px;cursor:pointer;appearance:none;-webkit-appearance:none;outline:none;">
-          <option value="white">Clean white — seamless white sweep</option>
-          <option value="warm">Warm natural — cream and sand tones</option>
-          <option value="dark">Dark studio — dramatic black sweep</option>
-          <option value="gradient">Cool gradient — soft blue tones</option>
-        </select>
-        <div style="position:absolute;right:12px;top:50%;transform:translateY(-50%);pointer-events:none;color:var(--muted);">
-          <svg width="11" height="11" viewBox="0 0 11 11" fill="none"><path d="M1.5 3.5L5.5 7.5L9.5 3.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
-        </div>
-      </div>
+    <div class="field-label">Backdrop style</div>
+    <div style="position:relative;margin-bottom:1rem;">
+      <select id="studio-style" style="width:100%;height:40px;background:var(--surface2);border:0.5px solid var(--border2);border-radius:8px;padding:0 36px 0 13px;color:var(--text);font-family:var(--font);font-size:13px;cursor:pointer;appearance:none;-webkit-appearance:none;outline:none;">
+        <option value="white">Clean white — seamless white sweep</option>
+        <option value="warm">Warm natural — cream and sand tones</option>
+        <option value="dark">Dark studio — dramatic black sweep</option>
+        <option value="gradient">Cool gradient — soft blue tones</option>
+      </select>
+      <div class="select-arrow"><svg width="11" height="11" viewBox="0 0 11 11" fill="none"><path d="M1.5 3.5L5.5 7.5L9.5 3.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
     </div>
-
-    <div id="studio-canvas-note" class="hidden" style="font-size:11px;font-family:'DM Mono',monospace;color:var(--muted);margin-bottom:1rem;padding:8px 12px;background:var(--surface2);border-radius:6px;">
-      Arrange the products on the bundle canvas above, then hit Generate below.
-    </div>
-
-    <button class="studio-generate-btn" id="studio-generate-btn" onclick="runStudioShoot()">
+    <div id="studio-canvas-note" class="hidden" style="font-size:11px;font-family:var(--mono);color:var(--muted);margin-bottom:1rem;padding:8px 12px;background:var(--surface2);border-radius:6px;">Arrange products on the bundle canvas above, then hit Render.</div>
+    <button class="studio-generate-btn" id="studio-btn" onclick="runStudioShoot()">
       <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M7 1L8.5 5.5H13L9.5 8.5L11 13L7 10L3 13L4.5 8.5L1 5.5H5.5L7 1Z" fill="#0b0b0b"/></svg>
-      Generate Studio Shoot
+      Render Studio Shoot
     </button>
-
     <div class="studio-loading hidden" id="studio-loading">
       <div class="studio-loading-txt">Rendering studio shot...</div>
       <div class="shimmer-bar"><div class="shimmer-inner"></div></div>
     </div>
-
     <div class="studio-result hidden" id="studio-result">
-      <div class="studio-img-wrap">
-        <img id="studio-output-img" src="" alt="Studio shot">
-      </div>
+      <div class="studio-img-wrap"><img id="studio-img" src="" alt="Studio shot"></div>
       <div class="studio-dl-row">
         <button class="studio-dl-btn" onclick="dlStudio()">Download PNG</button>
         <button class="studio-dl-btn" onclick="cpStudio()">Copy</button>
@@ -362,989 +293,789 @@ https://anysite.com/product/item-two"></textarea>
     </div>
   </div>
 
-</div>
-</div>
+</div></div>
 
 <script>
-  // ── State ──────────────────────────────────────────────────────────────────
-  let bundleItems = [];
-  let selectedItem = null;
-  let dragState = null;
-  let studioMode = 'auto';
-  let extractedImageUrls = []; // store final PNG data URLs for studio use
+// ── State ──────────────────────────────────────────────────────────────────────
+let bundleItems = [];
+let selectedItem = null;
+let dragState = null;
+let studioMode = 'auto';
+let extractedImageUrls = [];
 
-  // ── Keys (localStorage) ───────────────────────────────────────────────────
-  function getGeminiKey() { return localStorage.getItem('extracto_gemini_key') || ''; }
-
-  function saveKeys() {
-    const key = document.getElementById('gemini-key-input').value.trim();
-    if (key) localStorage.setItem('extracto_gemini_key', key);
-    document.getElementById('settings-panel').classList.add('hidden');
-    showToast('API key saved');
+// ── Keys ───────────────────────────────────────────────────────────────────────
+function getKey() { return localStorage.getItem('extracto_gemini_key') || ''; }
+function saveKeys() {
+  const k = document.getElementById('gemini-key-input').value.trim();
+  if (k) localStorage.setItem('extracto_gemini_key', k);
+  document.getElementById('settings-panel').classList.add('hidden');
+  toast('API key saved');
+}
+function toggleSettings() {
+  const p = document.getElementById('settings-panel');
+  p.classList.toggle('hidden');
+  if (!p.classList.contains('hidden')) {
+    const k = getKey();
+    if (k) document.getElementById('gemini-key-input').value = k;
   }
+}
 
-  function toggleSettings() {
-    const panel = document.getElementById('settings-panel');
-    panel.classList.toggle('hidden');
-    if (!panel.classList.contains('hidden')) {
-      const k = getGeminiKey();
-      if (k) document.getElementById('gemini-key-input').value = k;
-    }
-  }
+// ── Toast ──────────────────────────────────────────────────────────────────────
+function toast(msg) {
+  const t = document.createElement('div');
+  t.style.cssText = 'position:fixed;bottom:2rem;left:50%;transform:translateX(-50%);background:#1c1c1c;border:0.5px solid rgba(200,245,58,.3);color:#c8f53a;font-family:"DM Mono",monospace;font-size:12px;padding:8px 18px;border-radius:8px;z-index:999;pointer-events:none;';
+  t.textContent = msg;
+  document.body.appendChild(t);
+  setTimeout(() => t.remove(), 2000);
+}
 
-  function showToast(msg) {
-    const t = document.createElement('div');
-    t.style.cssText = 'position:fixed;bottom:2rem;left:50%;transform:translateX(-50%);background:#1c1c1c;border:0.5px solid rgba(200,245,58,.3);color:#c8f53a;font-family:"DM Mono",monospace;font-size:12px;padding:8px 18px;border-radius:8px;z-index:999;';
-    t.textContent = msg;
-    document.body.appendChild(t);
-    setTimeout(() => t.remove(), 2000);
-  }
+// ── Hint ───────────────────────────────────────────────────────────────────────
+function updateHint() {
+  const m = document.getElementById('mode').value;
+  document.getElementById('hint').textContent = {
+    transparent: 'Extracts the main product image from each link and removes the background.',
+    bundle: 'Extracts product images and arranges them on an editable canvas.',
+    studio: 'Extracts product images then renders a studio-style composite.'
+  }[m];
+}
 
-  // ── Hint ──────────────────────────────────────────────────────────────────
-  function updateHint() {
-    const mode = document.getElementById('mode').value;
-    const btn  = document.getElementById('go-btn');
-    const hints = {
-      transparent: 'Extracts the main product image from each link and removes the background.',
-      bundle:      'Extracts product images and arranges them into an editable bundle canvas.',
-      studio:      'Extracts product images then uses Gemini AI to generate a studio photograph.',
-    };
-    document.getElementById('hint').textContent = hints[mode];
-    btn.classList.toggle('studio-mode', mode === 'studio');
-  }
+// ── Status ─────────────────────────────────────────────────────────────────────
+function setSt(state, msg) {
+  const bar = document.getElementById('sbar');
+  const dot = document.getElementById('sdot');
+  bar.classList.remove('hidden','active','done','err','studio-active');
+  dot.className = 'sdot';
+  if (state==='loading'){bar.classList.add('active');dot.classList.add('pulse');}
+  else if (state==='studio'){bar.classList.add('studio-active');dot.classList.add('studio-pulse');}
+  else if (state==='done'){bar.classList.add('done');dot.classList.add('done');}
+  else if (state==='error'){bar.classList.add('err');dot.classList.add('err');}
+  document.getElementById('stxt').textContent = msg;
+}
 
-  // ── Status ────────────────────────────────────────────────────────────────
-  function setStatus(state, msg) {
-    const bar = document.getElementById('status-bar');
-    const dot = document.getElementById('status-dot');
-    bar.classList.remove('hidden','active','done','err','studio-active');
-    dot.className = 'status-dot';
-    if (state === 'loading') { bar.classList.add('active'); dot.classList.add('pulse'); }
-    else if (state === 'studio') { bar.classList.add('studio-active'); dot.classList.add('studio-pulse'); }
-    else if (state === 'done')   { bar.classList.add('done'); dot.classList.add('done'); }
-    else if (state === 'error')  { bar.classList.add('err');  dot.classList.add('err'); }
-    document.getElementById('status-txt').textContent = msg;
-  }
+// ── Log ────────────────────────────────────────────────────────────────────────
+function log(tag, cls, msg) {
+  const p = document.getElementById('pipeline');
+  p.classList.remove('hidden');
+  const l = document.createElement('div');
+  l.className = 'log-line';
+  l.innerHTML = `<span class="tag ${cls}">${tag}</span><span>${msg}</span>`;
+  p.appendChild(l);
+  p.scrollTop = p.scrollHeight;
+}
+function clearLog() {
+  const p = document.getElementById('pipeline');
+  p.innerHTML = '';
+  p.classList.add('hidden');
+}
 
-  // ── Log ───────────────────────────────────────────────────────────────────
-  function logLine(tag, tagClass, msg) {
-    const panel = document.getElementById('pipeline');
-    panel.classList.remove('hidden');
-    const line = document.createElement('div');
-    line.className = 'log-line';
-    line.innerHTML = `<span class="tag ${tagClass}">${tag}</span><span>${msg}</span>`;
-    panel.appendChild(line);
-    panel.scrollTop = panel.scrollHeight;
-  }
+// ── URL helpers ────────────────────────────────────────────────────────────────
+function extractUrls(text) {
+  const m = text.match(/https?:\/\/[^\s"'<>)\]\n]+/g) || [];
+  return [...new Set(m.map(u => u.replace(/[.,;]+$/, '')))];
+}
+function labelFromUrl(url) {
+  try {
+    const p = new URL(url).pathname.split('/').filter(Boolean);
+    return (p[p.length-1]||url).replace(/[-_]/g,' ').replace(/\.[^.]+$/,'').slice(0,30);
+  } catch { return url.slice(0,30); }
+}
 
-  function clearLog() {
-    const panel = document.getElementById('pipeline');
-    panel.innerHTML = '';
-    panel.classList.add('hidden');
-  }
+// ── Image fetching — 4 strategies ─────────────────────────────────────────────
+async function fetchImageUrl(url) {
+  log('try','tag-try',`Fetching ${labelFromUrl(url)}...`);
+  return await s1_shopify(url)
+      || await s2_proxy(url)
+      || await s3_allorigins(url)
+      || await s4_gemini(url)
+      || (log('failed','tag-fail',`Could not extract image from ${labelFromUrl(url)}`), null);
+}
 
-  // ── URL extraction ────────────────────────────────────────────────────────
-  function extractUrls(text) {
-    const matches = text.match(/https?:\/\/[^\s"'<>)\]\n]+/g) || [];
-    return [...new Set(matches.map(u => u.replace(/[.,;]+$/, '')))];
-  }
+async function s1_shopify(url) {
+  try {
+    const u = new URL(url);
+    const parts = u.pathname.split('/').filter(Boolean);
+    const idx = parts.indexOf('products');
+    if (idx === -1) return null;
+    const handle = parts[idx+1];
+    if (!handle) return null;
+    const res = await fetch(`${u.origin}/products/${handle}.json`, {signal:AbortSignal.timeout(6000)});
+    if (!res.ok) return null;
+    const data = await res.json();
+    const imgs = data?.product?.images;
+    if (!imgs?.length) return null;
+    log('shopify','tag-ok',`Got image — ${handle}`);
+    return imgs[0].src;
+  } catch { return null; }
+}
 
-  function labelFromUrl(url) {
+async function s2_proxy(url) {
+  try {
+    const res = await fetch(`/api/proxy?url=${encodeURIComponent(url)}`, {signal:AbortSignal.timeout(10000)});
+    if (!res.ok) return null;
+    const data = await res.json();
+    return extractFromHtml(data?.html || '', url, 'proxy');
+  } catch { return null; }
+}
+
+async function s3_allorigins(url) {
+  try {
+    const res = await fetch(`https://api.allorigins.win/get?url=${encodeURIComponent(url)}`, {signal:AbortSignal.timeout(10000)});
+    if (!res.ok) return null;
+    const data = await res.json();
+    return extractFromHtml(data?.contents || '', url, 'allorigins');
+  } catch { return null; }
+}
+
+async function s4_gemini(url) {
+  const key = getKey();
+  if (!key) return null;
+  try {
+    log('gemini','tag-ai',`Asking Gemini to find image on ${labelFromUrl(url)}...`);
+
+    // Try to get HTML via allorigins to send to Gemini
+    let html = '';
     try {
-      const parts = new URL(url).pathname.split('/').filter(Boolean);
-      return parts[parts.length-1].replace(/-/g,' ').replace(/_/g,' ').replace(/\.[^.]+$/,'').slice(0,32) || url.slice(-28);
-    } catch { return url.slice(-28); }
-  }
+      const r = await fetch(`https://api.allorigins.win/get?url=${encodeURIComponent(url)}`, {signal:AbortSignal.timeout(8000)});
+      if (r.ok) { const d = await r.json(); html = d?.contents || ''; }
+    } catch(e) {}
 
-  // ── Universal image fetcher ───────────────────────────────────────────────
-  async function tryShopifyJson(url) {
-    try {
-      const u = new URL(url);
-      const parts = u.pathname.split('/').filter(Boolean);
-      const idx = parts.indexOf('products');
-      if (idx === -1) return null;
-      const handle = parts[idx+1];
-      if (!handle) return null;
-      const res = await fetch(`${u.origin}/products/${handle}.json`, { signal: AbortSignal.timeout(6000) });
-      if (!res.ok) return null;
-      const data = await res.json();
-      const imgs = data?.product?.images;
-      if (!imgs?.length) return null;
-      logLine('shopify', 'tag-ok', `Got image via Shopify JSON — ${handle}`);
-      return imgs[0].src;
-    } catch { return null; }
-  }
+    const origin = (() => { try { return new URL(url).origin; } catch(e) { return ''; } })();
 
-  async function tryOgImage(url) {
-    try {
-      const proxy = `/api/proxy?url=${encodeURIComponent(url)}`;
-      const res = await fetch(proxy, { signal: AbortSignal.timeout(10000) });
-      if (!res.ok) return null;
-      const data = await res.json();
-      const html = data?.html || '';
-      if (!html) return null;
+    const prompt = html
+      ? `Find the main product image URL in this HTML from ${url}. Look for og:image meta tags, large img src attributes, or asset paths. Return ONLY the full absolute URL. If it starts with /, prepend ${origin}. No explanation.\n\nHTML:\n${html.slice(0,14000)}`
+      : `What is the main product image URL on this page: ${url}\nReturn ONLY the full absolute image URL. No explanation.`;
 
-      const ogMatch = html.match(/<meta[^>]+property=["']og:image["'][^>]+content=["']([^"']+)["']/i)
-                   || html.match(/<meta[^>]+content=["']([^"']+)["'][^>]+property=["']og:image["']/i);
-      if (ogMatch?.[1]?.startsWith('http')) { logLine('og:image','tag-ok',`og:image found for ${labelFromUrl(url)}`); return ogMatch[1]; }
-
-      const twMatch = html.match(/<meta[^>]+name=["']twitter:image["'][^>]+content=["']([^"']+)["']/i)
-                   || html.match(/<meta[^>]+content=["']([^"']+)["'][^>]+name=["']twitter:image["']/i);
-      if (twMatch?.[1]?.startsWith('http')) { logLine('twitter','tag-ok',`twitter:image found for ${labelFromUrl(url)}`); return twMatch[1]; }
-
-      const ldMatch = html.match(/"image"\s*:\s*"(https?:\/\/[^"]+\.(?:jpg|jpeg|png|webp)[^"]*)"/i);
-      if (ldMatch?.[1]) { logLine('json-ld','tag-ok',`JSON-LD image found for ${labelFromUrl(url)}`); return ldMatch[1]; }
-
-      const imgMatches = [...html.matchAll(/<img[^>]+src=["']([^"']+)["'][^>]*>/gi)];
-      const candidates = imgMatches.map(m => m[1])
-        .filter(src => {
-          const s = src.toLowerCase();
-          if (!s.startsWith('http') && !src.startsWith('/')) return false;
-          if (s.includes('logo') || s.includes('icon') || s.includes('sprite') || s.includes('banner') || s.includes('pixel') || s.includes('tracking') || s.includes('facebook') || s.includes('analytics')) return false;
-          // Accept known image extensions
-          if (s.match(/\.(jpg|jpeg|png|webp|gif)/)) return true;
-          // Accept extensionless image paths that look like product images
-          if (s.includes('/assets/') || s.includes('/images/assets/') || s.includes('/product') || s.includes('/image') || s.includes('cdn') || s.includes('/media/')) return true;
-          return false;
+    const res = await fetch(
+      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${key}`,
+      {
+        method:'POST',
+        headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({
+          contents:[{parts:[{text:prompt}]}],
+          generationConfig:{maxOutputTokens:200}
         })
-        .map(src => {
-          // Make relative URLs absolute
-          if (src.startsWith('//')) return 'https:' + src;
-          if (src.startsWith('/')) {
-            try { return new URL(url).origin + src; } catch(e) { return src; }
-          }
-          return src;
-        })
-        // Prefer larger/product images — sort by path depth and known keywords
-        .sort((a, b) => {
-          const score = s => {
-            let n = 0;
-            if (s.includes('/product')) n += 3;
-            if (s.includes('/assets/')) n += 2;
-            if (s.includes('/images/')) n += 1;
-            if (s.match(/\.(jpg|jpeg|png|webp)/)) n += 2;
-            return n;
-          };
-          return score(b) - score(a);
-        });
-
-      if (candidates.length) { logLine('img scan','tag-ok',`Image found via scan for ${labelFromUrl(url)}`); return candidates[0]; }
-      return null;
-    } catch { return null; }
-  }
-
-  async function tryAllorigins(url) {
-    try {
-      const proxy = `https://api.allorigins.win/get?url=${encodeURIComponent(url)}`;
-      const res = await fetch(proxy, { signal: AbortSignal.timeout(10000) });
-      if (!res.ok) return null;
-      const data = await res.json();
-      const html = data?.contents || '';
-      const ogMatch = html.match(/<meta[^>]+property=["']og:image["'][^>]+content=["']([^"']+)["']/i)
-                   || html.match(/<meta[^>]+content=["']([^"']+)["'][^>]+property=["']og:image["']/i);
-      if (ogMatch?.[1]?.startsWith('http')) { logLine('fallback','tag-ok',`Fallback found image for ${labelFromUrl(url)}`); return ogMatch[1]; }
-
-      // Last resort: scan for extensionless asset image patterns
-      const assetMatch = html.match(/["']((?:https?:)?\/\/[^"']+\/(?:Images|Assets|images|assets)\/[^"'?#]+\/\d+\/)[^"']*/i);
-      if (assetMatch?.[1]) {
-        const assetUrl = assetMatch[1].startsWith('//') ? 'https:' + assetMatch[1] : assetMatch[1];
-        logLine('fallback','tag-ok',`Found asset image for ${labelFromUrl(url)}`);
-        return assetUrl;
       }
-      return null;
-    } catch { return null; }
-  }
+    );
+    const result = await res.json();
+    if (result.error) throw new Error(result.error.message);
+    const raw = result.candidates?.[0]?.content?.parts?.[0]?.text?.trim() || '';
+    const clean = raw.replace(/['"'\n\r`]/g,'').trim();
+    if (clean.startsWith('http')) { log('gemini','tag-ok',`Gemini found image for ${labelFromUrl(url)}`); return clean; }
+    if (clean.startsWith('/') && origin) { log('gemini','tag-ok',`Gemini found image for ${labelFromUrl(url)}`); return origin+clean; }
+    return null;
+  } catch(e) { log('gemini','tag-fail',`Gemini error: ${e.message}`); return null; }
+}
 
-  async function fetchImageUrl(url) {
-    logLine('try','tag-try',`Fetching ${labelFromUrl(url)}...`);
-    return await tryShopifyJson(url)
-        || await tryOgImage(url)
-        || await tryAllorigins(url)
-        || await tryGeminiExtract(url)
-        || (logLine('failed','tag-fail',`Could not extract image from ${labelFromUrl(url)}`), null);
-  }
+function extractFromHtml(html, url, source) {
+  if (!html) return null;
+  const origin = (() => { try { return new URL(url).origin; } catch(e) { return ''; } })();
 
-  // Strategy 4: Gemini reads the raw HTML and extracts the image URL directly
-  async function tryGeminiExtract(url) {
-    const key = getGeminiKey();
-    if (!key) return null;
+  // og:image
+  const og = html.match(/<meta[^>]+property=["']og:image["'][^>]+content=["']([^"']+)["']/i)
+           || html.match(/<meta[^>]+content=["']([^"']+)["'][^>]+property=["']og:image["']/i);
+  if (og?.[1]?.startsWith('http')) { log(source,'tag-ok',`og:image found for ${labelFromUrl(url)}`); return og[1]; }
+
+  // twitter:image
+  const tw = html.match(/<meta[^>]+name=["']twitter:image["'][^>]+content=["']([^"']+)["']/i)
+           || html.match(/<meta[^>]+content=["']([^"']+)["'][^>]+name=["']twitter:image["']/i);
+  if (tw?.[1]?.startsWith('http')) { log(source,'tag-ok',`twitter:image found for ${labelFromUrl(url)}`); return tw[1]; }
+
+  // JSON-LD
+  const ld = html.match(/"image"\s*:\s*"(https?:\/\/[^"]+\.(?:jpg|jpeg|png|webp)[^"]*)"/i);
+  if (ld?.[1]) { log(source,'tag-ok',`JSON-LD image found for ${labelFromUrl(url)}`); return ld[1]; }
+
+  // img src scan — accepts extensionless asset paths too
+  const imgs = [...html.matchAll(/<img[^>]+src=["']([^"']+)["'][^>]*>/gi)].map(m => m[1]);
+  const candidates = imgs.filter(src => {
+    const s = src.toLowerCase();
+    if (s.includes('logo') || s.includes('icon') || s.includes('sprite') || s.includes('banner') || s.includes('pixel') || s.includes('facebook') || s.includes('tracking')) return false;
+    if (s.match(/\.(jpg|jpeg|png|webp)/)) return true;
+    if (s.includes('/assets/') || s.includes('/images/') || s.includes('/product') || s.includes('/media/') || s.includes('cdn')) return true;
+    return false;
+  }).map(src => {
+    if (src.startsWith('//')) return 'https:' + src;
+    if (src.startsWith('/') && origin) return origin + src;
+    return src;
+  }).filter(src => src.startsWith('http'));
+
+  if (candidates.length) { log(source,'tag-ok',`Image found via scan for ${labelFromUrl(url)}`); return candidates[0]; }
+  return null;
+}
+
+// ── Background removal ─────────────────────────────────────────────────────────
+function processImageOnCanvas(img) {
+  const c = document.createElement('canvas');
+  c.width = img.width; c.height = img.height;
+  const ctx = c.getContext('2d');
+  ctx.drawImage(img, 0, 0);
+  const d = ctx.getImageData(0, 0, c.width, c.height);
+  const px = d.data, w = c.width, h = c.height;
+  const corners = [
+    [px[0],px[1],px[2]],
+    [px[(w-1)*4],px[(w-1)*4+1],px[(w-1)*4+2]],
+    [px[(h-1)*w*4],px[(h-1)*w*4+1],px[(h-1)*w*4+2]],
+    [px[((h-1)*w+w-1)*4],px[((h-1)*w+w-1)*4+1],px[((h-1)*w+w-1)*4+2]]
+  ];
+  const bgR=Math.round(corners.reduce((a,c)=>a+c[0],0)/4);
+  const bgG=Math.round(corners.reduce((a,c)=>a+c[1],0)/4);
+  const bgB=Math.round(corners.reduce((a,c)=>a+c[2],0)/4);
+  const tol=40;
+  for(let i=0;i<px.length;i+=4){
+    if(Math.abs(px[i]-bgR)<tol&&Math.abs(px[i+1]-bgG)<tol&&Math.abs(px[i+2]-bgB)<tol) px[i+3]=0;
+  }
+  ctx.putImageData(d,0,0);
+  return c.toDataURL('image/png');
+}
+
+function loadImageCors(src) {
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    img.crossOrigin = 'anonymous';
+    img.onload = () => resolve(img);
+    img.onerror = () => reject(new Error('load failed'));
+    img.src = src;
+  });
+}
+
+async function removeBg(imageUrl) {
+  // Strategy 1: direct load with crossOrigin
+  try {
+    const img = await loadImageCors(imageUrl);
+    const result = processImageOnCanvas(img);
+    return result;
+  } catch(e) {}
+
+  // Strategy 2: route through our Vercel image proxy (adds CORS headers)
+  try {
+    const proxiedUrl = `/api/image?url=${encodeURIComponent(imageUrl)}`;
+    const img = await loadImageCors(proxiedUrl);
+    const result = processImageOnCanvas(img);
+    return result;
+  } catch(e) {}
+
+  // Strategy 3: allorigins raw proxy
+  try {
+    const aoUrl = `https://api.allorigins.win/raw?url=${encodeURIComponent(imageUrl)}`;
+    const img = await loadImageCors(aoUrl);
+    const result = processImageOnCanvas(img);
+    return result;
+  } catch(e) {}
+
+  // Strategy 4: fetch as blob, convert to object URL, then canvas
+  try {
+    const res = await fetch(`/api/image?url=${encodeURIComponent(imageUrl)}`, {signal: AbortSignal.timeout(8000)});
+    if (res.ok) {
+      const blob = await res.blob();
+      const objectUrl = URL.createObjectURL(blob);
+      const img = await loadImageCors(objectUrl);
+      const result = processImageOnCanvas(img);
+      URL.revokeObjectURL(objectUrl);
+      return result;
+    }
+  } catch(e) {}
+
+  return null;
+}
+
+// ── Card helpers ───────────────────────────────────────────────────────────────
+function createCard(label) {
+  const card = document.createElement('div');
+  card.className = 'img-card';
+  card.innerHTML = `<div class="checker"></div><div class="cbadge">fetching</div><div class="clbl">${label}</div><div class="card-ov"><button class="ov-btn" onclick="dlImg(this)">Download PNG</button><button class="ov-btn" onclick="cpImg(this)">Copy</button></div>`;
+  return card;
+}
+function updateCard(card, imgUrl, state) {
+  const badge = card.querySelector('.cbadge');
+  if (state==='done'&&imgUrl) {
+    if(badge)badge.remove();
+    const im=document.createElement('img');im.src=imgUrl;
+    card.insertBefore(im,card.querySelector('.card-ov'));
+    card.dataset.src=imgUrl;
+  } else if(state==='error') {
+    if(badge){badge.className='cbadge fail';badge.textContent='failed';}
+    const ov=card.querySelector('.card-ov');if(ov)ov.remove();
+  } else if(badge) badge.textContent=state;
+}
+
+// ── Main handler ───────────────────────────────────────────────────────────────
+async function handleGo() {
+  const brief = document.getElementById('brief').value.trim();
+  const mode  = document.getElementById('mode').value;
+  const ta    = document.getElementById('brief');
+  if (!brief) { ta.classList.add('shake'); setTimeout(()=>ta.classList.remove('shake'),400); return; }
+  const urls = extractUrls(brief);
+  if (!urls.length) { setSt('error','No product links found — paste at least one URL.'); return; }
+
+  document.getElementById('go-btn').disabled = true;
+  document.getElementById('extract-results').classList.add('hidden');
+  document.getElementById('bundle-results').classList.add('hidden');
+  document.getElementById('studio-section').classList.add('hidden');
+  document.getElementById('studio-result').classList.add('hidden');
+  document.getElementById('studio-loading').classList.add('hidden');
+  document.getElementById('extract-grid').innerHTML = '';
+  document.getElementById('bcanvas').innerHTML = '';
+  bundleItems = []; extractedImageUrls = [];
+  clearLog();
+
+  if (mode==='transparent') await runExtract(urls);
+  else if (mode==='bundle')  await runBundle(urls);
+  else if (mode==='studio')  await runStudioPipeline(urls);
+
+  document.getElementById('go-btn').disabled = false;
+}
+
+// ── Extract ────────────────────────────────────────────────────────────────────
+async function runExtract(urls) {
+  document.getElementById('extract-results').classList.remove('hidden');
+  const grid = document.getElementById('extract-grid');
+  let done = 0;
+  for (let i=0;i<urls.length;i++) {
+    setSt('loading',`Processing ${i+1} of ${urls.length}...`);
+    const card = createCard(labelFromUrl(urls[i]));
+    grid.appendChild(card);
     try {
-      // Fetch via our proxy first
-      const proxyRes = await fetch(`/api/proxy?url=${encodeURIComponent(url)}`, { signal: AbortSignal.timeout(10000) });
-      if (!proxyRes.ok) return null;
-      const data = await proxyRes.json();
-      const html = data?.html || '';
-      if (!html) return null;
+      const imgUrl = await fetchImageUrl(urls[i]);
+      if (imgUrl) {
+        updateCard(card,null,'removing bg');
+        const final = await removeBg(imgUrl);
+        updateCard(card,final,final?'done':'error');
+        if(final){done++;extractedImageUrls.push(final);}
+      } else updateCard(card,null,'error');
+    } catch(e){updateCard(card,null,'error');}
+    document.getElementById('rcnt').textContent=`${i+1} of ${urls.length}`;
+  }
+  setSt('done',`Done — ${done} of ${urls.length} image${urls.length!==1?'s':''} ready`);
+}
 
-      // Send HTML to Gemini and ask it to find the image URL
-      const res = await fetch(
-        `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${key}`,
-        {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            contents: [{
-              parts: [{
-                text: `Find the main product image URL in this HTML. It could be in an <img src>, og:image meta tag, or any image path. Return ONLY the full URL (starting with http or /). If it starts with /, prepend ${new URL(url).origin}. Return ONLY the URL, nothing else.
-
-HTML:
-${html.slice(0, 12000)}`
-              }]
-            }],
-            generationConfig: { maxOutputTokens: 200 }
-          })
+// ── Bundle ─────────────────────────────────────────────────────────────────────
+async function runBundle(urls) {
+  document.getElementById('bundle-results').classList.remove('hidden');
+  for (let i=0;i<urls.length;i++) {
+    setSt('loading',`Processing ${i+1} of ${urls.length}...`);
+    try {
+      const imgUrl = await fetchImageUrl(urls[i]);
+      if (imgUrl) {
+        const final = await removeBg(imgUrl);
+        if(final){
+          bundleItems.push({id:bundleItems.length,src:final,label:labelFromUrl(urls[i]),x:0,y:0,w:120,h:120,angle:0});
+          extractedImageUrls.push(final);
         }
-      );
-      const result = await res.json();
-      const raw = result.candidates?.[0]?.content?.parts?.[0]?.text?.trim() || '';
-      // Clean up -- sometimes Gemini adds quotes or newlines
-      const clean = raw.replace(/['"\n]/g,'').trim();
-      if (clean.startsWith('http')) {
-        logLine('gemini','tag-ok', `Gemini extracted image for ${labelFromUrl(url)}`);
-        return clean;
       }
-      return null;
-    } catch(e) { return null; }
+    } catch(e){}
   }
+  await renderBundleCanvas();
+  setSt('done',`Bundle ready — ${bundleItems.length} product${bundleItems.length!==1?'s':''}`);
+}
 
-  // ── Background removal ────────────────────────────────────────────────────
-  async function removeBg(imageUrl) {
-    return new Promise(resolve => {
-      const img = new Image();
-      img.crossOrigin = 'anonymous';
-      img.onload = () => {
-        const c = document.createElement('canvas');
-        c.width = img.width; c.height = img.height;
-        const ctx = c.getContext('2d');
-        ctx.drawImage(img, 0, 0);
-        const d = ctx.getImageData(0,0,c.width,c.height);
-        const px = d.data, w = c.width, h = c.height;
-        const corners = [
-          [px[0],px[1],px[2]],
-          [px[(w-1)*4],px[(w-1)*4+1],px[(w-1)*4+2]],
-          [px[(h-1)*w*4],px[(h-1)*w*4+1],px[(h-1)*w*4+2]],
-          [px[((h-1)*w+w-1)*4],px[((h-1)*w+w-1)*4+1],px[((h-1)*w+w-1)*4+2]]
-        ];
-        const bgR=Math.round(corners.reduce((a,c)=>a+c[0],0)/4);
-        const bgG=Math.round(corners.reduce((a,c)=>a+c[1],0)/4);
-        const bgB=Math.round(corners.reduce((a,c)=>a+c[2],0)/4);
-        const tol=40;
-        for(let i=0;i<px.length;i+=4){
-          if(Math.abs(px[i]-bgR)<tol&&Math.abs(px[i+1]-bgG)<tol&&Math.abs(px[i+2]-bgB)<tol) px[i+3]=0;
+// ── Studio pipeline ────────────────────────────────────────────────────────────
+async function runStudioPipeline(urls) {
+  setSt('loading','Extracting product images...');
+  for (let i=0;i<urls.length;i++) {
+    setSt('loading',`Extracting ${i+1} of ${urls.length}...`);
+    try {
+      const imgUrl = await fetchImageUrl(urls[i]);
+      if (imgUrl) {
+        const final = await removeBg(imgUrl);
+        if(final){
+          extractedImageUrls.push(final);
+          bundleItems.push({id:bundleItems.length,src:final,label:labelFromUrl(urls[i]),x:0,y:0,w:120,h:120,angle:0});
         }
-        ctx.putImageData(d,0,0);
-        resolve(c.toDataURL('image/png'));
-      };
-      img.onerror = () => resolve(null);
-      img.src = imageUrl;
-    });
+      }
+    } catch(e){}
   }
-
-  // ── Card helpers ──────────────────────────────────────────────────────────
-  function createCard(label) {
-    const card = document.createElement('div');
-    card.className = 'img-card';
-    card.innerHTML = `<div class="checker"></div><div class="card-badge">fetching</div><div class="img-label">${label}</div><div class="img-overlay"><button class="img-action" onclick="dlImg(this)">Download PNG</button><button class="img-action" onclick="cpImg(this)">Copy</button></div>`;
-    return card;
-  }
-
-  function updateCard(card, imgUrl, state) {
-    const badge = card.querySelector('.card-badge');
-    if (state === 'done' && imgUrl) {
-      if (badge) badge.remove();
-      const im = document.createElement('img'); im.src = imgUrl;
-      card.insertBefore(im, card.querySelector('.img-overlay'));
-      card.dataset.src = imgUrl;
-    } else if (state === 'error') {
-      if (badge) { badge.className='card-badge fail'; badge.textContent='failed'; }
-      const ov=card.querySelector('.img-overlay'); if(ov)ov.remove();
-    } else if (badge) { badge.textContent = state; }
-  }
-
-  // ── Main handler ──────────────────────────────────────────────────────────
-  async function handleGo() {
-    const brief    = document.getElementById('brief').value.trim();
-    const mode     = document.getElementById('mode').value;
-    const textarea = document.getElementById('brief');
-
-    if (!brief) {
-      textarea.classList.add('shake');
-      setTimeout(() => textarea.classList.remove('shake'), 400);
-      return;
-    }
-
-    const urls = extractUrls(brief);
-    if (!urls.length) { setStatus('error','No product links found — paste at least one URL.'); return; }
-
-
-
-    document.getElementById('go-btn').disabled = true;
-    document.getElementById('extract-results').classList.add('hidden');
-    document.getElementById('bundle-results').classList.add('hidden');
-    document.getElementById('studio-section').classList.add('hidden');
-    document.getElementById('studio-result').classList.add('hidden');
-    document.getElementById('studio-loading').classList.add('hidden');
-    document.getElementById('extract-grid').innerHTML = '';
-    document.getElementById('bundle-canvas').innerHTML = '';
-    bundleItems = [];
-    extractedImageUrls = [];
-    clearLog();
-
-    if (mode === 'transparent') await runExtract(urls);
-    else if (mode === 'bundle')  await runBundle(urls);
-    else if (mode === 'studio')  await runStudioPipeline(urls);
-
-    document.getElementById('go-btn').disabled = false;
-  }
-
-  // ── Extract mode ──────────────────────────────────────────────────────────
-  async function runExtract(urls) {
-    document.getElementById('extract-results').classList.remove('hidden');
-    const grid = document.getElementById('extract-grid');
-    let done = 0;
-
-    for (let i=0; i<urls.length; i++) {
-      setStatus('loading', `Processing ${i+1} of ${urls.length}...`);
-      const label = labelFromUrl(urls[i]);
-      const card  = createCard(label);
-      grid.appendChild(card);
-      try {
-        const imgUrl = await fetchImageUrl(urls[i]);
-        if (imgUrl) {
-          updateCard(card, null, 'removing bg');
-          const final = await removeBg(imgUrl);
-          updateCard(card, final, final?'done':'error');
-          if (final) { done++; extractedImageUrls.push(final); }
-        } else { updateCard(card, null, 'error'); }
-      } catch(e) { updateCard(card, null, 'error'); }
-      document.getElementById('extract-count').textContent = `${i+1} of ${urls.length}`;
-    }
-    setStatus('done', `Done — ${done} of ${urls.length} image${urls.length!==1?'s':''} ready`);
-  }
-
-  // ── Bundle mode ───────────────────────────────────────────────────────────
-  async function runBundle(urls) {
+  if (!extractedImageUrls.length) { setSt('error','Could not extract any images.'); return; }
+  document.getElementById('studio-section').classList.remove('hidden');
+  if (studioMode==='canvas') {
     document.getElementById('bundle-results').classList.remove('hidden');
-    for (let i=0; i<urls.length; i++) {
-      setStatus('loading', `Processing ${i+1} of ${urls.length}...`);
-      try {
-        const imgUrl = await fetchImageUrl(urls[i]);
-        if (imgUrl) {
-          const final = await removeBg(imgUrl);
-          if (final) { bundleItems.push({ id: bundleItems.length, src: final, label: labelFromUrl(urls[i]), x:0, y:0, w:120, h:120, angle:0 }); extractedImageUrls.push(final); }
-        }
-      } catch(e) {}
-    }
-    renderBundleCanvas();
-    setStatus('done', `Bundle ready — ${bundleItems.length} product${bundleItems.length!==1?'s':''}`);
+    await renderBundleCanvas();
+    setSt('done',`${extractedImageUrls.length} image${extractedImageUrls.length!==1?'s':''} ready — arrange then hit Render`);
+  } else {
+    await runStudioShoot();
+  }
+}
+
+// ── Studio Shoot ───────────────────────────────────────────────────────────────
+async function runStudioShoot() {
+  if (!extractedImageUrls.length) { toast("No product images — run Let's go first"); return; }
+  const btn = document.getElementById('studio-btn');
+  btn.disabled = true;
+  document.getElementById('studio-loading').classList.remove('hidden');
+  document.getElementById('studio-result').classList.add('hidden');
+  setSt('studio','Rendering studio shot...');
+  try {
+    const result = await renderStudio(extractedImageUrls, document.getElementById('studio-style').value);
+    document.getElementById('studio-img').src = result;
+    document.getElementById('studio-result').classList.remove('hidden');
+    setSt('done','Studio shot ready');
+  } catch(e) {
+    setSt('error',`Render failed — ${e.message}`);
+  } finally {
+    document.getElementById('studio-loading').classList.add('hidden');
+    btn.disabled = false;
+  }
+}
+
+async function renderStudio(urls, style) {
+  const W=1400,H=1050;
+  const c=document.createElement('canvas');
+  c.width=W;c.height=H;
+  const ctx=c.getContext('2d');
+  const styles={
+    white:   {bg:['#ffffff','#e8e8e8'],floor:'#f0f0f0',shadow:'rgba(0,0,0,0.18)',   refl:.13,vig:'rgba(180,180,180,0.3)'},
+    warm:    {bg:['#fdf6ee','#e8d5b8'],floor:'#ede0cc',shadow:'rgba(80,40,0,0.15)', refl:.10,vig:'rgba(160,110,60,0.25)'},
+    dark:    {bg:['#1a1a1a','#0a0a0a'],floor:'#111111',shadow:'rgba(0,0,0,0.7)',    refl:.18,vig:'rgba(0,0,0,0.55)'},
+    gradient:{bg:['#e8f0fe','#c2d4f8'],floor:'#d0e0fa',shadow:'rgba(30,60,140,0.15)',refl:.12,vig:'rgba(80,120,220,0.2)'},
+  };
+  const s=styles[style]||styles.white;
+  const floorY=H*0.62;
+  const bgGrad=ctx.createLinearGradient(0,0,0,H);
+  bgGrad.addColorStop(0,s.bg[0]);bgGrad.addColorStop(1,s.bg[1]);
+  ctx.fillStyle=bgGrad;ctx.fillRect(0,0,W,H);
+  const fGrad=ctx.createLinearGradient(0,floorY-60,0,H);
+  fGrad.addColorStop(0,s.bg[1]);fGrad.addColorStop(.2,s.floor);fGrad.addColorStop(1,s.floor);
+  ctx.fillStyle=fGrad;
+  ctx.beginPath();ctx.moveTo(0,H);ctx.lineTo(W,H);ctx.lineTo(W,floorY+20);
+  ctx.bezierCurveTo(W*.75,floorY-30,W*.25,floorY-30,0,floorY+20);
+  ctx.closePath();ctx.fill();
+
+  const imgs=await Promise.all(urls.map(src=>new Promise(res=>{
+    const img=new Image();img.crossOrigin='anonymous';
+    img.onload=()=>res(img);img.onerror=()=>res(null);img.src=src;
+  })));
+  const valid=imgs.filter(Boolean);
+  if(!valid.length)throw new Error('No images loaded');
+
+  const count=valid.length,maxH=H*0.52,padX=W*0.08,slotW=(W-padX*2)/count;
+  const placements=valid.map((img,i)=>{
+    const aspect=img.width/img.height;
+    const pH=maxH*(0.82+(i%2===0?.1:0));
+    const pW=pH*aspect;
+    const cx=padX+slotW*i+slotW/2;
+    const cy=floorY;
+    const tilt=(i%2===0?1:-1)*(Math.random()*4);
+    return{img,pW,pH,cx,cy,tilt};
+  });
+
+  // Shadows
+  placements.forEach(({pW,cx,cy})=>{
+    const sg=ctx.createRadialGradient(cx,cy+4,0,cx,cy+4,pW*.5);
+    sg.addColorStop(0,s.shadow);sg.addColorStop(1,'rgba(0,0,0,0)');
+    ctx.fillStyle=sg;ctx.beginPath();
+    ctx.ellipse(cx,cy+4,pW*.48,pW*.09,0,0,Math.PI*2);ctx.fill();
+  });
+
+  // Reflections
+  for(const{img,pW,pH,cx,cy,tilt}of placements){
+    ctx.save();ctx.translate(cx,cy);ctx.rotate(tilt*Math.PI/180);
+    const reflH=pH*.3;
+    ctx.save();ctx.scale(1,-1);ctx.globalAlpha=s.refl;
+    ctx.drawImage(img,-pW/2,-reflH*.3,pW,reflH);
+    ctx.globalAlpha=1;
+    const rg=ctx.createLinearGradient(0,-reflH,0,0);
+    rg.addColorStop(0,'rgba(255,255,255,0)');rg.addColorStop(1,'rgba(255,255,255,1)');
+    ctx.globalCompositeOperation='destination-out';ctx.fillStyle=rg;
+    ctx.fillRect(-pW/2,-reflH,pW,reflH);
+    ctx.globalCompositeOperation='source-over';ctx.restore();ctx.restore();
   }
 
-  // ── Studio pipeline ───────────────────────────────────────────────────────
-  async function runStudioPipeline(urls) {
-    // First extract all images
-    setStatus('loading', 'Extracting product images...');
-    for (let i=0; i<urls.length; i++) {
-      setStatus('loading', `Extracting ${i+1} of ${urls.length}...`);
-      try {
-        const imgUrl = await fetchImageUrl(urls[i]);
-        if (imgUrl) {
-          const final = await removeBg(imgUrl);
-          if (final) {
-            extractedImageUrls.push(final);
-            bundleItems.push({ id: bundleItems.length, src: final, label: labelFromUrl(urls[i]), x:0, y:0, w:120, h:120, angle:0 });
-          }
-        }
-      } catch(e) {}
-    }
-
-    if (!extractedImageUrls.length) { setStatus('error','Could not extract any images.'); return; }
-
-    // Show studio section
-    document.getElementById('studio-section').classList.remove('hidden');
-
-    if (studioMode === 'canvas') {
-      // Show bundle canvas for arrangement first
-      document.getElementById('bundle-results').classList.remove('hidden');
-      renderBundleCanvas();
-      setStatus('done', `${extractedImageUrls.length} image${extractedImageUrls.length!==1?'s':''} ready — arrange on canvas then hit Generate`);
-    } else {
-      // Auto mode — go straight to generation
-      await runStudioShoot();
-    }
+  // Products
+  for(const{img,pW,pH,cx,cy,tilt}of placements){
+    ctx.save();ctx.translate(cx,cy);ctx.rotate(tilt*Math.PI/180);
+    ctx.drawImage(img,-pW/2,-pH,pW,pH);ctx.restore();
   }
 
-  // ── Studio Shoot generation ───────────────────────────────────────────────
-  // ── Studio Shoot — client-side canvas compositing ────────────────────────
-  async function runStudioShoot() {
-    if (!extractedImageUrls.length) { showToast("No product images — run Let's go first"); return; }
+  // Key light
+  const lg=ctx.createRadialGradient(W*.3,H*.1,0,W*.3,H*.1,W*.75);
+  lg.addColorStop(0,'rgba(255,255,255,0.13)');lg.addColorStop(1,'rgba(255,255,255,0)');
+  ctx.fillStyle=lg;ctx.fillRect(0,0,W,H);
 
-    const btn = document.getElementById('studio-generate-btn');
-    btn.disabled = true;
-    document.getElementById('studio-loading').classList.remove('hidden');
-    document.getElementById('studio-result').classList.add('hidden');
-    setStatus('studio', 'Rendering studio shot...');
-    logLine('studio','tag-ai','Compositing backdrop, shadows and reflections...');
+  // Vignette
+  const vg=ctx.createRadialGradient(W/2,H/2,H*.3,W/2,H/2,W*.8);
+  vg.addColorStop(0,'rgba(0,0,0,0)');vg.addColorStop(1,s.vig);
+  ctx.fillStyle=vg;ctx.fillRect(0,0,W,H);
 
+  return c.toDataURL('image/png');
+}
+
+// ── Image classifier ───────────────────────────────────────────────────────────
+async function classifyImage(dataUrl) {
+  const key = getKey();
+  if (!key) return 'packshot';
+  try {
+    const res = await fetch(
+      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${key}`,
+      {
+        method:'POST',
+        headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({
+          contents:[{parts:[
+            {inline_data:{mime_type:'image/png',data:dataUrl.split(',')[1]}},
+            {text:'Classify this product image. Reply with ONLY one word: model_fullbody, model_halfbody, flatlay, packshot, or lifestyle'}
+          ]}],
+          generationConfig:{maxOutputTokens:10}
+        })
+      }
+    );
+    const d = await res.json();
+    const raw = d.candidates?.[0]?.content?.parts?.[0]?.text?.trim().toLowerCase()||'packshot';
+    const valid=['model_fullbody','model_halfbody','flatlay','packshot','lifestyle'];
+    return valid.includes(raw)?raw:'packshot';
+  } catch(e){return 'packshot';}
+}
+
+// ── Smart layout ───────────────────────────────────────────────────────────────
+function smartLayout(items, types, W, H) {
+  const counts={};
+  types.forEach(t=>counts[t]=(counts[t]||0)+1);
+  const dom=Object.entries(counts).sort((a,b)=>b[1]-a[1])[0][0];
+  const pad=W*.05;
+  const count=items.length;
+
+  if (dom==='model_fullbody') {
+    const slotW=(W-pad*2)/count;
+    items.forEach((item,i)=>{
+      const pH=H*.88;const pW=pH*.55;
+      item.w=Math.min(pW,slotW*.88);item.h=item.w/.55;
+      item.x=pad+slotW*i+(slotW-item.w)/2;item.y=H*.04;
+      item.angle=(i%2===0?1:-1)*1.5;
+    });
+  } else if (dom==='model_halfbody') {
+    const baseW=(W-pad*2)/Math.max(count-.3,1);
+    items.forEach((item,i)=>{
+      const pH=H*.78;const pW=pH*.65;
+      item.w=Math.min(pW,baseW*.9);item.h=item.w/.65;
+      item.x=pad+baseW*i-(i>0?item.w*.12:0);
+      item.y=H*.08+(i%2===0?0:H*.05);
+      item.angle=(i%2===0?-2:2);
+    });
+  } else if (dom==='flatlay') {
+    const cols=Math.ceil(Math.sqrt(count));
+    const rows=Math.ceil(count/cols);
+    const cellW=(W-pad*2)/cols;const cellH=(H-pad*2)/rows;
+    const sz=Math.min(cellW,cellH)*.82;
+    items.forEach((item,i)=>{
+      item.w=sz;item.h=sz;
+      item.x=pad+(i%cols)*cellW+(cellW-sz)/2;
+      item.y=pad+Math.floor(i/cols)*cellH+(cellH-sz)/2;
+      item.angle=(Math.random()-.5)*8;
+    });
+  } else if (dom==='lifestyle'&&count>1) {
+    const heroSz=H*.72;
+    items[0].w=heroSz*1.1;items[0].h=heroSz;
+    items[0].x=(W-items[0].w)/2;items[0].y=(H-heroSz)/2;items[0].angle=0;
+    items.slice(1).forEach((item,i)=>{
+      const sz=heroSz*.52;item.w=sz;item.h=sz;
+      item.x=i%2===0?pad:W-pad-sz;
+      item.y=H*.2+i*sz*.55;item.angle=(i%2===0?-1:1)*(3+Math.random()*4);
+    });
+  } else if (Object.keys(counts).length>1) {
+    const heroIdx=types.findIndex(t=>t.startsWith('model'))!==-1?types.findIndex(t=>t.startsWith('model')):0;
+    const heroSz=Math.min(H*.68,W*.45);
+    items[heroIdx].w=heroSz*(types[heroIdx]==='model_fullbody'?.6:.85);
+    items[heroIdx].h=heroSz;
+    items[heroIdx].x=(W-items[heroIdx].w)/2;items[heroIdx].y=(H-heroSz)/2;items[heroIdx].angle=0;
+    const pos=[{x:pad,y:pad,a:-8},{x:W-pad-heroSz*.5,y:pad,a:8},{x:pad,y:H-pad-heroSz*.5,a:6},{x:W-pad-heroSz*.5,y:H-pad-heroSz*.5,a:-6}];
+    items.filter((_,i)=>i!==heroIdx).forEach((item,i)=>{
+      const sz=heroSz*.42;item.w=sz;item.h=sz;
+      const p=pos[i%pos.length];item.x=p.x;item.y=p.y;item.angle=p.a;
+    });
+  } else {
+    const slotW=(W-pad*2)/count;
+    items.forEach((item,i)=>{
+      const sz=Math.min(slotW*.82,H*.58);
+      item.w=sz;item.h=sz;
+      item.x=pad+slotW*i+(slotW-sz)/2;
+      item.y=H*.18+(i%2===0?0:H*.08);
+      item.angle=(i%2===0?-3:3);
+    });
+  }
+}
+
+// ── Bundle canvas ──────────────────────────────────────────────────────────────
+function bc() { return document.getElementById('bcanvas'); }
+
+async function renderBundleCanvas() {
+  const c=bc();c.innerHTML='';
+  const W=c.offsetWidth,H=c.offsetHeight;
+
+  // Initial random placement
+  bundleItems.forEach(item=>{
+    const sz=Math.max(80,Math.min(160,W/Math.max(bundleItems.length,2)*1.4));
+    item.w=sz;item.h=sz;
+    item.x=40+Math.random()*(W-sz-80);
+    item.y=30+Math.random()*(H-sz-60);
+    item.angle=(Math.random()-.5)*20;
+    mountItem(item);
+  });
+
+  // Smart layout if Gemini key available
+  const key=getKey();
+  if (key&&bundleItems.length) {
+    log('ai','tag-ai','Analysing image types for smart layout...');
     try {
-      const styleVal = document.getElementById('studio-style').value;
-      const result   = await renderStudioShot(extractedImageUrls, styleVal);
-      document.getElementById('studio-output-img').src = result;
-      document.getElementById('studio-result').classList.remove('hidden');
-      logLine('studio','tag-ok','Studio shot ready');
-      setStatus('done', 'Studio shot ready');
-    } catch(err) {
-      logLine('studio','tag-fail', `Render failed: ${err.message}`);
-      setStatus('error', `Render failed — ${err.message}`);
-    } finally {
-      document.getElementById('studio-loading').classList.add('hidden');
-      btn.disabled = false;
-    }
+      const types=await Promise.all(bundleItems.map(item=>classifyImage(item.src)));
+      log('ai','tag-ok',`Types: ${types.join(', ')}`);
+      smartLayout(bundleItems,types,W,H);
+      bundleItems.forEach(item=>{
+        const el=document.getElementById('bi-'+item.id);
+        if(el)applyT(el,item);
+      });
+    } catch(e){}
   }
+}
 
-  async function renderStudioShot(imageUrls, style) {
-    const W = 1400, H = 1050;
-    const c = document.createElement('canvas');
-    c.width = W; c.height = H;
-    const ctx = c.getContext('2d');
-
-    const styles = {
-      white:    { bg: ['#ffffff','#e8e8e8'], floor: '#f0f0f0', shadow: 'rgba(0,0,0,0.18)',      refl: 0.13, vig: 'rgba(180,180,180,0.3)' },
-      warm:     { bg: ['#fdf6ee','#e8d5b8'], floor: '#ede0cc', shadow: 'rgba(80,40,0,0.15)',    refl: 0.10, vig: 'rgba(160,110,60,0.25)' },
-      dark:     { bg: ['#1a1a1a','#0a0a0a'], floor: '#111111', shadow: 'rgba(0,0,0,0.7)',       refl: 0.18, vig: 'rgba(0,0,0,0.55)' },
-      gradient: { bg: ['#e8f0fe','#c2d4f8'], floor: '#d0e0fa', shadow: 'rgba(30,60,140,0.15)', refl: 0.12, vig: 'rgba(80,120,220,0.2)' },
-    };
-    const s = styles[style] || styles.white;
-    const floorY = H * 0.62;
-
-    // Backdrop
-    const bgGrad = ctx.createLinearGradient(0, 0, 0, H);
-    bgGrad.addColorStop(0, s.bg[0]);
-    bgGrad.addColorStop(1, s.bg[1]);
-    ctx.fillStyle = bgGrad;
-    ctx.fillRect(0, 0, W, H);
-
-    // Swept floor
-    const floorGrad = ctx.createLinearGradient(0, floorY - 60, 0, H);
-    floorGrad.addColorStop(0, s.bg[1]);
-    floorGrad.addColorStop(0.2, s.floor);
-    floorGrad.addColorStop(1, s.floor);
-    ctx.fillStyle = floorGrad;
-    ctx.beginPath();
-    ctx.moveTo(0, H); ctx.lineTo(W, H); ctx.lineTo(W, floorY + 20);
-    ctx.bezierCurveTo(W * 0.75, floorY - 30, W * 0.25, floorY - 30, 0, floorY + 20);
-    ctx.closePath();
-    ctx.fill();
-
-    // Load images
-    const imgs = await Promise.all(imageUrls.map(src => new Promise(res => {
-      const img = new Image();
-      img.crossOrigin = 'anonymous';
-      img.onload = () => res(img);
-      img.onerror = () => res(null);
-      img.src = src;
-    })));
-    const valid = imgs.filter(Boolean);
-    if (!valid.length) throw new Error('No images loaded');
-
-    const count  = valid.length;
-    const maxH   = H * 0.52;
-    const padX   = W * 0.08;
-    const slotW  = (W - padX * 2) / count;
-
-    // Classify images for smart placement if key available
-    let classifications = valid.map(() => 'packshot');
-    const studioKey = getGeminiKey();
-    if (studioKey) {
-      try {
-        classifications = await Promise.all(
-          imageUrls.map(src => classifyImage(src))
-        );
-      } catch(e) {}
-    }
-
-    const dominant = classifications.reduce((acc, t) => {
-      acc[t] = (acc[t]||0)+1; return acc;
-    }, {});
-    const domType = Object.entries(dominant).sort((a,b)=>b[1]-a[1])[0][0];
-
-    const placements = valid.map((img, i) => {
-      const aspect = img.width / img.height;
-      const type   = classifications[i] || 'packshot';
-      let pH, pW, cx, cy, tilt;
-
-      // Model full body — tall and slim
-      if (type === 'model_fullbody') {
-        pH   = maxH * 1.05;
-        pW   = pH * Math.min(aspect, 0.6);
-        cx   = padX + slotW * i + slotW / 2;
-        cy   = floorY + pH * 0.02;
-        tilt = (i % 2 === 0 ? 1 : -1) * 1.5;
-      }
-      // Model half body — medium portrait
-      else if (type === 'model_halfbody') {
-        pH   = maxH * 0.88;
-        pW   = pH * Math.min(aspect, 0.72);
-        cx   = padX + slotW * i + slotW / 2 - (i > 0 ? pW * 0.1 : 0);
-        cy   = floorY;
-        tilt = (i % 2 === 0 ? -2 : 2);
-      }
-      // Flat lay — square, overhead feel
-      else if (type === 'flatlay') {
-        pH   = maxH * 0.7;
-        pW   = pH * aspect;
-        cx   = padX + slotW * i + slotW / 2;
-        cy   = floorY - pH * 0.1;
-        tilt = (Math.random() - 0.5) * 10;
-      }
-      // Lifestyle — wider, more horizontal
-      else if (type === 'lifestyle') {
-        pH   = maxH * 0.75;
-        pW   = pH * aspect;
-        cx   = padX + slotW * i + slotW / 2;
-        cy   = floorY;
-        tilt = 0;
-      }
-      // Default packshot
-      else {
-        pH   = maxH * (0.82 + (i % 2 === 0 ? 0.1 : 0));
-        pW   = pH * aspect;
-        cx   = padX + slotW * i + slotW / 2;
-        cy   = floorY;
-        tilt = (i % 2 === 0 ? 1 : -1) * (Math.random() * 4);
-      }
-
-      return { img, pW, pH, cx, cy, tilt };
-    });
-
-    // Shadows
-    placements.forEach(({ pW, cx, cy }) => {
-      const sGrad = ctx.createRadialGradient(cx, cy + 4, 0, cx, cy + 4, pW * 0.5);
-      sGrad.addColorStop(0, s.shadow);
-      sGrad.addColorStop(1, 'rgba(0,0,0,0)');
-      ctx.fillStyle = sGrad;
-      ctx.beginPath();
-      ctx.ellipse(cx, cy + 4, pW * 0.48, pW * 0.09, 0, 0, Math.PI * 2);
-      ctx.fill();
-    });
-
-    // Reflections
-    for (const { img, pW, pH, cx, cy, tilt } of placements) {
-      ctx.save();
-      ctx.translate(cx, cy);
-      ctx.rotate(tilt * Math.PI / 180);
-      const reflH = pH * 0.3;
-      ctx.save();
-      ctx.scale(1, -1);
-      ctx.globalAlpha = s.refl;
-      ctx.drawImage(img, -pW/2, -reflH * 0.3, pW, reflH);
-      ctx.globalAlpha = 1;
-      // Fade out reflection
-      const rg = ctx.createLinearGradient(0, -reflH, 0, 0);
-      rg.addColorStop(0, 'rgba(255,255,255,0)');
-      rg.addColorStop(1, 'rgba(255,255,255,1)');
-      ctx.globalCompositeOperation = 'destination-out';
-      ctx.fillStyle = rg;
-      ctx.fillRect(-pW/2, -reflH, pW, reflH);
-      ctx.globalCompositeOperation = 'source-over';
-      ctx.restore();
-      ctx.restore();
-    }
-
-    // Products
-    for (const { img, pW, pH, cx, cy, tilt } of placements) {
-      ctx.save();
-      ctx.translate(cx, cy);
-      ctx.rotate(tilt * Math.PI / 180);
-      ctx.drawImage(img, -pW/2, -pH, pW, pH);
-      ctx.restore();
-    }
-
-    // Key light
-    const lg = ctx.createRadialGradient(W*0.3, H*0.1, 0, W*0.3, H*0.1, W*0.75);
-    lg.addColorStop(0, 'rgba(255,255,255,0.13)');
-    lg.addColorStop(1, 'rgba(255,255,255,0)');
-    ctx.fillStyle = lg; ctx.fillRect(0, 0, W, H);
-
-    // Vignette
-    const vg = ctx.createRadialGradient(W/2, H/2, H*0.3, W/2, H/2, W*0.8);
-    vg.addColorStop(0, 'rgba(0,0,0,0)');
-    vg.addColorStop(1, s.vig);
-    ctx.fillStyle = vg; ctx.fillRect(0, 0, W, H);
-
-    return c.toDataURL('image/png');
+function mountItem(item) {
+  let el=document.getElementById('bi-'+item.id);
+  if (!el) {
+    el=document.createElement('div');
+    el.className='bitem';el.id='bi-'+item.id;el.dataset.id=item.id;
+    el.innerHTML=`<img src="${item.src}" crossorigin="anonymous"><div class="handle nw" data-h="nw"></div><div class="handle ne" data-h="ne"></div><div class="handle sw" data-h="sw"></div><div class="handle se" data-h="se"></div><div class="handle n" data-h="n"></div><div class="handle s" data-h="s"></div><div class="handle e" data-h="e"></div><div class="handle w" data-h="w"></div><div class="handle rot" data-h="rot"></div>`;
+    bc().appendChild(el);
   }
+  applyT(el,item);
+}
 
-    function setStudioMode(mode) {
-    studioMode = mode;
-    document.getElementById('mode-auto-btn').classList.toggle('active', mode==='auto');
-    document.getElementById('mode-canvas-btn').classList.toggle('active', mode==='canvas');
-    document.getElementById('studio-canvas-note').classList.toggle('hidden', mode!=='canvas');
+function applyT(el,item){
+  el.style.left=item.x+'px';el.style.top=item.y+'px';
+  el.style.width=item.w+'px';el.style.height=item.h+'px';
+  el.style.transform=`rotate(${item.angle}deg)`;
+}
+
+function getItem(id){return bundleItems.find(i=>i.id==id);}
+
+function selectItem(item){
+  deselectAll();selectedItem=item;
+  const el=document.getElementById('bi-'+item.id);
+  if(el){el.classList.add('sel');bc().appendChild(el);}
+}
+
+function deselectAll(){
+  if(selectedItem){const el=document.getElementById('bi-'+selectedItem.id);if(el)el.classList.remove('sel');}
+  selectedItem=null;
+}
+
+function canvasDown(e){
+  const itemEl=e.target.closest('.bitem');
+  if(!itemEl){deselectAll();return;}
+  const id=parseInt(itemEl.dataset.id);
+  const item=getItem(id);if(!item)return;
+  selectItem(item);e.preventDefault();e.stopPropagation();
+  const handleType=e.target.dataset?.h;
+  const cr=bc().getBoundingClientRect();
+  const cx=e.clientX-cr.left,cy=e.clientY-cr.top;
+  if(handleType==='rot'){
+    const icx=item.x+item.w/2,icy=item.y+item.h/2;
+    dragState={type:'rotate',startAngle:Math.atan2(cy-icy,cx-icx)*180/Math.PI,origAngle:item.angle,icx,icy};
+  } else if(handleType){
+    dragState={type:'resize',handle:handleType,startX:cx,startY:cy,origX:item.x,origY:item.y,origW:item.w,origH:item.h};
+  } else {
+    dragState={type:'move',startX:cx-item.x,startY:cy-item.y};
   }
+  document.addEventListener('mousemove',onMove);
+  document.addEventListener('mouseup',onUp);
+}
 
-  // ── Bundle canvas + transforms ────────────────────────────────────────────
-  const canvas = () => document.getElementById('bundle-canvas');
-
-  // ── Image classifier via Gemini Vision (free tier) ───────────────────────
-  async function classifyImage(dataUrl) {
-    const key = getGeminiKey();
-    if (!key) return 'packshot'; // fallback if no key
-
-    try {
-      const base64 = dataUrl.split(',')[1];
-      const res = await fetch(
-        `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${key}`,
-        {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            contents: [{
-              parts: [
-                { inline_data: { mime_type: 'image/png', data: base64 } },
-                { text: 'Classify this product image into exactly one of these categories. Reply with ONLY the category word, nothing else: model_fullbody, model_halfbody, flatlay, packshot, lifestyle' }
-              ]
-            }],
-            generationConfig: { maxOutputTokens: 10 }
-          })
-        }
-      );
-      const data = await res.json();
-      const raw = data.candidates?.[0]?.content?.parts?.[0]?.text?.trim().toLowerCase() || 'packshot';
-      const valid = ['model_fullbody','model_halfbody','flatlay','packshot','lifestyle'];
-      return valid.includes(raw) ? raw : 'packshot';
-    } catch(e) { return 'packshot'; }
+function onMove(e){
+  if(!dragState||!selectedItem)return;
+  const cr=bc().getBoundingClientRect();
+  const cx=e.clientX-cr.left,cy=e.clientY-cr.top;
+  const item=selectedItem,el=document.getElementById('bi-'+item.id);
+  const MIN=40;
+  if(dragState.type==='move'){item.x=cx-dragState.startX;item.y=cy-dragState.startY;}
+  else if(dragState.type==='rotate'){
+    const ang=Math.atan2(cy-dragState.icy,cx-dragState.icx)*180/Math.PI;
+    const delta=ang-dragState.startAngle;
+    item.angle=e.shiftKey?Math.round((dragState.origAngle+delta)/15)*15:dragState.origAngle+delta;
+  } else if(dragState.type==='resize'){
+    const dx=cx-dragState.startX,dy=cy-dragState.startY;
+    const h=dragState.handle;
+    const{origX,origY,origW,origH}=dragState;
+    if(h.includes('e'))item.w=Math.max(MIN,origW+dx);
+    if(h.includes('s'))item.h=Math.max(MIN,origH+dy);
+    if(h.includes('w')){const nw=Math.max(MIN,origW-dx);item.x=origX+(origW-nw);item.w=nw;}
+    if(h.includes('n')){const nh=Math.max(MIN,origH-dy);item.y=origY+(origH-nh);item.h=nh;}
   }
+  applyT(el,item);
+}
 
-  // ── Smart layout engine ───────────────────────────────────────────────────
-  function smartLayout(items, classifications, canvasW, canvasH) {
-    const types = classifications;
-    const count = items.length;
-    const pad   = canvasW * 0.05;
+function onUp(){dragState=null;document.removeEventListener('mousemove',onMove);document.removeEventListener('mouseup',onUp);}
 
-    // Detect dominant type
-    const typeCounts = {};
-    types.forEach(t => typeCounts[t] = (typeCounts[t]||0)+1);
-    const dominant = Object.entries(typeCounts).sort((a,b)=>b[1]-a[1])[0][0];
+function autoArrange(){
+  const W=bc().offsetWidth;
+  const cols=Math.ceil(Math.sqrt(bundleItems.length));
+  const sz=Math.min(150,W/cols-20);
+  bundleItems.forEach((item,i)=>{
+    item.x=(i%cols)*(sz+16)+20;item.y=Math.floor(i/cols)*(sz+16)+20;
+    item.w=sz;item.h=sz;item.angle=(Math.random()-.5)*16;
+    applyT(document.getElementById('bi-'+item.id),item);
+  });
+  deselectAll();
+}
 
-    // All models full body — lookbook layout: tall portraits side by side
-    if (dominant === 'model_fullbody') {
-      const slotW = (canvasW - pad*2) / count;
-      items.forEach((item, i) => {
-        const h = canvasH * 0.88;
-        const w = h * 0.55;
-        item.w = Math.min(w, slotW * 0.88);
-        item.h = item.w / 0.55;
-        item.x = pad + slotW * i + (slotW - item.w) / 2;
-        item.y = canvasH * 0.04;
-        item.angle = (i % 2 === 0 ? 1 : -1) * 1.5; // very subtle tilt
-      });
-      return;
-    }
+function shuffleArrange(){
+  const c=bc(),W=c.offsetWidth,H=c.offsetHeight;
+  bundleItems.forEach(item=>{
+    const sz=Math.max(80,Math.min(190,W/Math.max(bundleItems.length,2)*1.5));
+    item.x=20+Math.random()*(W-sz-40);item.y=20+Math.random()*(H-sz-40);
+    item.w=sz;item.h=sz;item.angle=(Math.random()-.5)*32;
+    applyT(document.getElementById('bi-'+item.id),item);
+  });
+  deselectAll();
+}
 
-    // Half body / editorial — slight overlap, portrait format
-    if (dominant === 'model_halfbody') {
-      const baseW = (canvasW - pad * 2) / Math.max(count - 0.3, 1);
-      items.forEach((item, i) => {
-        const h = canvasH * 0.78;
-        const w = h * 0.65;
-        item.w = Math.min(w, baseW * 0.9);
-        item.h = item.w / 0.65;
-        item.x = pad + baseW * i - (i > 0 ? item.w * 0.12 : 0); // overlap
-        item.y = canvasH * 0.08 + (i % 2 === 0 ? 0 : canvasH * 0.05);
-        item.angle = (i % 2 === 0 ? -2 : 2);
-      });
-      return;
-    }
-
-    // Flat lay — overhead grid, minimal tilt
-    if (dominant === 'flatlay') {
-      const cols = Math.ceil(Math.sqrt(count));
-      const rows = Math.ceil(count / cols);
-      const cellW = (canvasW - pad * 2) / cols;
-      const cellH = (canvasH - pad * 2) / rows;
-      const sz = Math.min(cellW, cellH) * 0.82;
-      items.forEach((item, i) => {
-        item.w = sz; item.h = sz;
-        item.x = pad + (i % cols) * cellW + (cellW - sz) / 2;
-        item.y = pad + Math.floor(i / cols) * cellH + (cellH - sz) / 2;
-        item.angle = (Math.random() - 0.5) * 8; // slight tilt for flat lays
-      });
-      return;
-    }
-
-    // Lifestyle — hero centre, supporting images flanking
-    if (dominant === 'lifestyle' && count > 1) {
-      // Hero: largest, centred
-      const heroIdx = 0;
-      const heroSz  = canvasH * 0.72;
-      items[heroIdx].w = heroSz * 1.1;
-      items[heroIdx].h = heroSz;
-      items[heroIdx].x = (canvasW - items[heroIdx].w) / 2;
-      items[heroIdx].y = (canvasH - heroSz) / 2;
-      items[heroIdx].angle = 0;
-
-      // Supporting: flank left and right
-      const supporting = items.filter((_, i) => i !== heroIdx);
-      const ssz = heroSz * 0.52;
-      supporting.forEach((item, i) => {
-        item.w = ssz; item.h = ssz;
-        const side = i % 2 === 0 ? -1 : 1;
-        item.x = side === -1
-          ? pad
-          : canvasW - pad - ssz;
-        item.y = canvasH * 0.2 + i * ssz * 0.55;
-        item.angle = side * (3 + Math.random() * 4);
-      });
-      return;
-    }
-
-    // Mixed types — hero centre, rest scattered with context
-    if (Object.keys(typeCounts).length > 1) {
-      // Find if there's a model shot to use as hero
-      const heroIdx = types.findIndex(t => t.startsWith('model')) !== -1
-        ? types.findIndex(t => t.startsWith('model'))
-        : 0;
-
-      const heroSz = Math.min(canvasH * 0.68, canvasW * 0.45);
-      items[heroIdx].w = heroSz * (types[heroIdx] === 'model_fullbody' ? 0.6 : 0.85);
-      items[heroIdx].h = heroSz;
-      items[heroIdx].x = (canvasW - items[heroIdx].w) / 2;
-      items[heroIdx].y = (canvasH - heroSz) / 2 + canvasH * 0.02;
-      items[heroIdx].angle = 0;
-
-      const rest = items.filter((_, i) => i !== heroIdx);
-      const positions = [
-        { x: pad,                        y: pad,                          a: -8  },
-        { x: canvasW - pad - heroSz*0.5, y: pad,                          a:  8  },
-        { x: pad,                        y: canvasH - pad - heroSz * 0.5, a:  6  },
-        { x: canvasW - pad - heroSz*0.5, y: canvasH - pad - heroSz * 0.5, a: -6  },
-        { x: canvasW * 0.4,              y: pad * 0.5,                    a:  4  },
-      ];
-      rest.forEach((item, i) => {
-        const sz = heroSz * 0.42;
-        item.w = sz; item.h = sz;
-        const pos = positions[i % positions.length];
-        item.x = pos.x; item.y = pos.y; item.angle = pos.a;
-      });
-      return;
-    }
-
-    // Default packshot — clean staggered row
-    const slotW = (canvasW - pad * 2) / count;
-    items.forEach((item, i) => {
-      const sz = Math.min(slotW * 0.82, canvasH * 0.58);
-      item.w = sz; item.h = sz;
-      item.x = pad + slotW * i + (slotW - sz) / 2;
-      item.y = canvasH * 0.18 + (i % 2 === 0 ? 0 : canvasH * 0.08);
-      item.angle = (i % 2 === 0 ? -3 : 3);
+async function exportBundle(){
+  deselectAll();
+  const c=bc();
+  const out=document.createElement('canvas');
+  out.width=c.offsetWidth*2;out.height=c.offsetHeight*2;
+  const ctx=out.getContext('2d');ctx.scale(2,2);
+  for(const el of c.querySelectorAll('.bitem')){
+    const item=getItem(parseInt(el.dataset.id));if(!item)continue;
+    const img=el.querySelector('img');
+    const cx=item.x+item.w/2,cy=item.y+item.h/2;
+    const ang=item.angle*Math.PI/180;
+    await new Promise(res=>{
+      const i=new Image();i.crossOrigin='anonymous';
+      i.onload=()=>{ctx.save();ctx.translate(cx,cy);ctx.rotate(ang);ctx.drawImage(i,-item.w/2,-item.h/2,item.w,item.h);ctx.restore();res();};
+      i.src=img.src;
     });
   }
+  const a=document.createElement('a');a.href=out.toDataURL('image/png');a.download='bundle-'+Date.now()+'.png';a.click();
+}
 
-  async function renderBundleCanvas() {
-    const c = canvas(); c.innerHTML = '';
-    const w = c.offsetWidth, h = c.offsetHeight;
+// ── Studio mode toggle ─────────────────────────────────────────────────────────
+function setStudioMode(mode){
+  studioMode=mode;
+  document.getElementById('smode-auto').classList.toggle('active',mode==='auto');
+  document.getElementById('smode-canvas').classList.toggle('active',mode==='canvas');
+  document.getElementById('studio-canvas-note').classList.toggle('hidden',mode!=='canvas');
+}
 
-    // Set initial sizes before classification
-    bundleItems.forEach(item => {
-      const sz = Math.max(80, Math.min(160, w / Math.max(bundleItems.length, 2) * 1.4));
-      item.w = sz; item.h = sz;
-      item.x = 40 + Math.random() * (w - sz - 80);
-      item.y = 30 + Math.random() * (h - sz - 60);
-      item.angle = (Math.random()-0.5)*20;
-      mountItem(item);
-    });
-
-    // If Gemini key available, classify and re-layout smartly
-    const key = getGeminiKey();
-    if (key && bundleItems.length) {
-      logLine('ai', 'tag-ai', 'Analysing image types for smart layout...');
-      try {
-        const classifications = await Promise.all(
-          bundleItems.map(item => classifyImage(item.src))
-        );
-        logLine('ai', 'tag-ok', `Detected: ${classifications.join(', ')}`);
-        smartLayout(bundleItems, classifications, w, h);
-        bundleItems.forEach(item => {
-          const el = document.getElementById('bi-'+item.id);
-          if (el) applyTransform(el, item);
-        });
-      } catch(e) {
-        // silently fall back to random layout already rendered
-      }
-    }
-  }
-
-  function mountItem(item) {
-    let el = document.getElementById('bi-'+item.id);
-    if (!el) {
-      el = document.createElement('div');
-      el.className = 'bitem';
-      el.id = 'bi-'+item.id;
-      el.dataset.id = item.id;
-      el.innerHTML = `<img src="${item.src}" crossorigin="anonymous"><div class="handle nw" data-h="nw"></div><div class="handle ne" data-h="ne"></div><div class="handle sw" data-h="sw"></div><div class="handle se" data-h="se"></div><div class="handle n" data-h="n"></div><div class="handle s" data-h="s"></div><div class="handle e" data-h="e"></div><div class="handle w" data-h="w"></div><div class="handle rot" data-h="rot"></div>`;
-      canvas().appendChild(el);
-    }
-    applyTransform(el, item);
-  }
-
-  function applyTransform(el, item) {
-    el.style.left=item.x+'px'; el.style.top=item.y+'px';
-    el.style.width=item.w+'px'; el.style.height=item.h+'px';
-    el.style.transform=`rotate(${item.angle}deg)`;
-  }
-
-  function getItem(id) { return bundleItems.find(i=>i.id==id); }
-
-  function selectItem(item) {
-    deselectAll();
-    selectedItem = item;
-    const el = document.getElementById('bi-'+item.id);
-    if (el) { el.classList.add('sel'); canvas().appendChild(el); }
-  }
-
-  function deselectAll() {
-    if (selectedItem) { const el=document.getElementById('bi-'+selectedItem.id); if(el)el.classList.remove('sel'); }
-    selectedItem = null;
-  }
-
-  function canvasDown(e) {
-    const itemEl = e.target.closest('.bitem');
-    if (!itemEl) { deselectAll(); return; }
-    const id = parseInt(itemEl.dataset.id);
-    const item = getItem(id);
-    if (!item) return;
-    selectItem(item);
-    e.preventDefault(); e.stopPropagation();
-
-    const handleType = e.target.dataset?.h;
-    const cr = canvas().getBoundingClientRect();
-    const cx = e.clientX - cr.left;
-    const cy = e.clientY - cr.top;
-
-    if (handleType === 'rot') {
-      const icx = item.x+item.w/2, icy = item.y+item.h/2;
-      dragState = { type:'rotate', startAngle: Math.atan2(cy-icy,cx-icx)*180/Math.PI, origAngle: item.angle, icx, icy };
-    } else if (handleType) {
-      dragState = { type:'resize', handle:handleType, startX:cx, startY:cy, origX:item.x, origY:item.y, origW:item.w, origH:item.h };
-    } else {
-      dragState = { type:'move', startX:cx-item.x, startY:cy-item.y };
-    }
-
-    document.addEventListener('mousemove', onMove);
-    document.addEventListener('mouseup', onUp);
-  }
-
-  function onMove(e) {
-    if (!dragState || !selectedItem) return;
-    const cr = canvas().getBoundingClientRect();
-    const cx = e.clientX-cr.left, cy = e.clientY-cr.top;
-    const item = selectedItem;
-    const el   = document.getElementById('bi-'+item.id);
-    const MIN  = 40;
-
-    if (dragState.type==='move') {
-      item.x = cx-dragState.startX;
-      item.y = cy-dragState.startY;
-    } else if (dragState.type==='rotate') {
-      const ang = Math.atan2(cy-dragState.icy, cx-dragState.icx)*180/Math.PI;
-      const delta = ang - dragState.startAngle;
-      item.angle = e.shiftKey ? Math.round((dragState.origAngle+delta)/15)*15 : dragState.origAngle+delta;
-    } else if (dragState.type==='resize') {
-      const dx=cx-dragState.startX, dy=cy-dragState.startY;
-      const h=dragState.handle;
-      let {origX,origY,origW,origH}=dragState;
-      if(h.includes('e')) item.w=Math.max(MIN,origW+dx);
-      if(h.includes('s')) item.h=Math.max(MIN,origH+dy);
-      if(h.includes('w')) { const nw=Math.max(MIN,origW-dx); item.x=origX+(origW-nw); item.w=nw; }
-      if(h.includes('n')) { const nh=Math.max(MIN,origH-dy); item.y=origY+(origH-nh); item.h=nh; }
-    }
-    applyTransform(el, item);
-  }
-
-  function onUp() {
-    dragState = null;
-    document.removeEventListener('mousemove',onMove);
-    document.removeEventListener('mouseup',onUp);
-  }
-
-  function autoArrange() {
-    const w=canvas().offsetWidth;
-    const cols=Math.ceil(Math.sqrt(bundleItems.length));
-    const sz=Math.min(150,w/cols-24);
-    bundleItems.forEach((item,i)=>{
-      item.x=(i%cols)*(sz+20)+20; item.y=Math.floor(i/cols)*(sz+20)+20;
-      item.w=sz; item.h=sz; item.angle=(Math.random()-.5)*16;
-      applyTransform(document.getElementById('bi-'+item.id),item);
-    });
-    deselectAll();
-  }
-
-  function shuffleArrange() {
-    const c=canvas(), w=c.offsetWidth, h=c.offsetHeight;
-    bundleItems.forEach(item=>{
-      const sz=Math.max(80,Math.min(190,w/Math.max(bundleItems.length,2)*1.5));
-      item.x=20+Math.random()*(w-sz-40); item.y=20+Math.random()*(h-sz-40);
-      item.w=sz; item.h=sz; item.angle=(Math.random()-.5)*32;
-      applyTransform(document.getElementById('bi-'+item.id),item);
-    });
-    deselectAll();
-  }
-
-  async function exportBundle() {
-    deselectAll();
-    const c=canvas();
-    const out=document.createElement('canvas');
-    out.width=c.offsetWidth*2; out.height=c.offsetHeight*2;
-    const ctx=out.getContext('2d');
-    ctx.scale(2,2);
-    for (const el of c.querySelectorAll('.bitem')) {
-      const id=parseInt(el.dataset.id);
-      const item=getItem(id);
-      if(!item) continue;
-      await new Promise(res=>{
-        const img=new Image(); img.crossOrigin='anonymous';
-        img.onload=()=>{
-          const cx=item.x+item.w/2, cy=item.y+item.h/2;
-          ctx.save(); ctx.translate(cx,cy); ctx.rotate(item.angle*Math.PI/180);
-          ctx.drawImage(img,-item.w/2,-item.h/2,item.w,item.h);
-          ctx.restore(); res();
-        };
-        img.onerror=res; img.src=item.src;
-      });
-    }
-    const a=document.createElement('a');
-    a.href=out.toDataURL('image/png');
-    a.download='bundle-'+Date.now()+'.png';
-    a.click();
-  }
-
-  // ── Download / Copy helpers ───────────────────────────────────────────────
-  function dlImg(btn) {
-    const src=btn.closest('.img-card').dataset.src; if(!src)return;
-    const a=document.createElement('a'); a.href=src; a.download='product-'+Date.now()+'.png'; a.click();
-  }
-
-  async function cpImg(btn) {
-    const src=btn.closest('.img-card').dataset.src; if(!src)return;
-    try {
-      const blob=await(await fetch(src)).blob();
-      await navigator.clipboard.write([new ClipboardItem({[blob.type]:blob})]);
-      btn.textContent='Copied!'; setTimeout(()=>btn.textContent='Copy',1500);
-    } catch { btn.textContent='Error'; setTimeout(()=>btn.textContent='Copy',1500); }
-  }
-
-  function dlStudio() {
-    const src=document.getElementById('studio-output-img').src; if(!src)return;
-    const a=document.createElement('a'); a.href=src; a.download='studio-'+Date.now()+'.png'; a.click();
-  }
-
-  async function cpStudio() {
-    const src=document.getElementById('studio-output-img').src; if(!src)return;
-    try {
-      const blob=await(await fetch(src)).blob();
-      await navigator.clipboard.write([new ClipboardItem({[blob.type]:blob})]);
-      showToast('Copied to clipboard');
-    } catch { showToast('Copy failed — try Download instead'); }
-  }
+// ── Download / Copy ────────────────────────────────────────────────────────────
+function dlImg(btn){
+  const src=btn.closest('.img-card').dataset.src;if(!src)return;
+  const a=document.createElement('a');a.href=src;a.download='product-'+Date.now()+'.png';a.click();
+}
+async function cpImg(btn){
+  const src=btn.closest('.img-card').dataset.src;if(!src)return;
+  try{
+    const blob=await(await fetch(src)).blob();
+    await navigator.clipboard.write([new ClipboardItem({[blob.type]:blob})]);
+    btn.textContent='Copied!';setTimeout(()=>btn.textContent='Copy',1500);
+  }catch{btn.textContent='Error';setTimeout(()=>btn.textContent='Copy',1500);}
+}
+function dlStudio(){
+  const src=document.getElementById('studio-img').src;if(!src)return;
+  const a=document.createElement('a');a.href=src;a.download='studio-'+Date.now()+'.png';a.click();
+}
+async function cpStudio(){
+  const src=document.getElementById('studio-img').src;if(!src)return;
+  try{
+    const blob=await(await fetch(src)).blob();
+    await navigator.clipboard.write([new ClipboardItem({[blob.type]:blob})]);
+    toast('Copied to clipboard');
+  }catch{toast('Copy failed — try Download instead');}
+}
 </script>
 </body>
 </html>
