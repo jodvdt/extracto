@@ -301,7 +301,7 @@ https://anysite.com/product/item-two"></textarea>
 
 </div>
   <div style="text-align:center;margin-top:3rem;font-size:10px;font-family:'DM Mono',monospace;color:#333;letter-spacing:.5px;">
-    Extracto v2.2 &mdash; brewed by Jonas for Devote Digital</div>
+    Extracto v2.3 &mdash; brewed by Jonas for Devote Digital</div>
 </div>
 
 <script>
@@ -1235,9 +1235,13 @@ async function renderBundleCanvas() {
   const c=bc();c.innerHTML='';
   const W=c.offsetWidth,H=c.offsetHeight;
 
-  // Apply hero-centre layout immediately
-  heroLayout(bundleItems, W, H);
+  // Mount all items first (preserves img src), then apply hero layout
   bundleItems.forEach(item=>mountItem(item));
+  heroLayout(bundleItems, W, H);
+  bundleItems.forEach(item=>{
+    const el=document.getElementById('bi-'+item.id);
+    if(el){ applyT(el,item); if(item.zIndex) el.style.zIndex=item.zIndex; }
+  });
 
   // Refine with Gemini classification if key available
   const key=getKey();
@@ -1314,8 +1318,8 @@ function heroLayout(items, W, H) {
     item.zIndex = pos.dz;
   });
 
-  // Sort by zIndex so back items mount first (front items drawn on top)
-  items.sort((a,b) => (a.zIndex||0) - (b.zIndex||0));
+  // Don't sort in place -- CSS z-index handles layering
+  // Just ensure zIndex is set on all items
 }
 
 function mountItem(item) {
@@ -1398,9 +1402,13 @@ function onUp(){dragState=null;document.removeEventListener('mousemove',onMove);
 function autoArrange(){
   const c=bc(),W=c.offsetWidth,H=c.offsetHeight;
   heroLayout(bundleItems,W,H);
-  // Re-mount in new z-order
-  c.innerHTML='';
-  bundleItems.forEach(item=>mountItem(item));
+  bundleItems.forEach(item=>{
+    const el=document.getElementById('bi-'+item.id);
+    if(el){
+      applyT(el,item);
+      if(item.zIndex) el.style.zIndex=item.zIndex;
+    }
+  });
   deselectAll();
 }
 
