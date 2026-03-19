@@ -218,6 +218,16 @@ https://anysite.com/product/item-two"></textarea>
     <div class="hint" id="hint">Extracts the main product image from each link and removes the background.</div>
   </div>
 
+  <!-- Paste zone -->
+  <div id="paste-zone" style="border:0.5px dashed rgba(255,255,255,0.15);border-radius:var(--rad-lg);padding:1.25rem;margin-bottom:1rem;text-align:center;cursor:pointer;transition:all .2s;" onclick="document.getElementById('paste-file').click()" ondragover="pasteDragOver(event)" ondragleave="pasteDragLeave(event)" ondrop="pasteDrop(event)">
+    <input type="file" id="paste-file" accept="image/*" multiple style="display:none" onchange="handleFileInput(event)">
+    <div style="font-size:11px;font-family:var(--mono);color:var(--muted);line-height:1.8;">
+      <span style="font-size:18px;display:block;margin-bottom:6px;opacity:.4;">⌘</span>
+      Paste a screenshot <span style="color:var(--muted2);">Ctrl+V</span> &nbsp;·&nbsp; drag an image &nbsp;·&nbsp; or <span style="color:var(--accent);text-decoration:underline;cursor:pointer;">click to upload</span>
+    </div>
+    <div id="paste-preview-row" style="display:flex;gap:8px;flex-wrap:wrap;justify-content:center;margin-top:10px;"></div>
+  </div>
+
   <!-- Status -->
   <div class="status-bar hidden" id="sbar"><div class="sdot" id="sdot"></div><span id="stxt"></span></div>
 
@@ -383,11 +393,31 @@ function labelFromUrl(url) {
 // ── Image fetching — 4 strategies ─────────────────────────────────────────────
 async function fetchImageUrl(url) {
   log('try','tag-try',`Fetching ${labelFromUrl(url)}...`);
-  return await s1_shopify(url)
-      || await s2_proxy(url)
-      || await s3_allorigins(url)
-      || await s4_gemini(url)
-      || (log('failed','tag-fail',`Could not extract image from ${labelFromUrl(url)}`), null);
+  const isShopify = url.includes('myshopify') || url.includes('/products/');
+
+  // Shopify: get image URL directly, load as-is (Shopify CDN has CORS headers)
+  if (isShopify) {
+    const imgUrl = await s1_shopify(url);
+    if (imgUrl) return imgUrl;
+  }
+
+  // Non-Shopify: find image URL, then wrap it through our image proxy
+  // so removeBg can access pixels without CORS blocking
+  let imgUrl = await s2_proxy(url)
+            || await s3_allorigins(url)
+            || await s4_gemini(url);
+
+  if (!imgUrl) {
+    log('failed','tag-fail',`Could not extract image from ${labelFromUrl(url)}`);
+    return null;
+  }
+
+  // Wrap through /api/image so browser loads it with CORS headers from our server
+  if (!isShopify && !imgUrl.startsWith('/api/image')) {
+    return `/api/image?url=${encodeURIComponent(imgUrl)}`;
+  }
+
+  return imgUrl;
 }
 
 async function s1_shopify(url) {
@@ -538,6 +568,8 @@ function extractFromHtml(html, url, source) {
 }
 
 // ── Background removal ─────────────────────────────────────────────────────────
+// Note: for non-Shopify images, fetchImageUrl already routes through /api/image
+// so by the time we get here the URL should be CORS-safe
 function processImageOnCanvas(img) {
   const c = document.createElement('canvas');
   c.width = img.width; c.height = img.height;
@@ -573,33 +605,24 @@ function loadImageCors(src) {
 }
 
 async function removeBg(imageUrl) {
-  // Strategy 1: direct load with crossOrigin
+  // If already routed through our proxy, load directly
+  if (imageUrl.startsWith('/api/image') || imageUrl.startsWith('data:')) {
+    try {
+      const img = await loadImageCors(imageUrl);
+      return processImageOnCanvas(img);
+    } catch(e) {}
+  }
+
+  // Strategy 1: direct load (works for Shopify CDN and most CORS-friendly hosts)
   try {
     const img = await loadImageCors(imageUrl);
-    const result = processImageOnCanvas(img);
-    return result;
+    return processImageOnCanvas(img);
   } catch(e) {}
 
-  // Strategy 2: route through our Vercel image proxy (adds CORS headers)
+  // Strategy 2: fetch as blob via /api/image, create object URL (most reliable)
   try {
-    const proxiedUrl = `/api/image?url=${encodeURIComponent(imageUrl)}`;
-    const img = await loadImageCors(proxiedUrl);
-    const result = processImageOnCanvas(img);
-    return result;
-  } catch(e) {}
-
-  // Strategy 3: allorigins raw proxy
-  try {
-    const aoUrl = `https://api.allorigins.win/raw?url=${encodeURIComponent(imageUrl)}`;
-    const img = await loadImageCors(aoUrl);
-    const result = processImageOnCanvas(img);
-    return result;
-  } catch(e) {}
-
-  // Strategy 4: fetch as blob, convert to object URL, then canvas
-  try {
-    const res = await fetch(`/api/image?url=${encodeURIComponent(imageUrl)}`, {signal: AbortSignal.timeout(8000)});
-    if (res.ok) {
+    const res = await fetch(`/api/image?url=${encodeURIComponent(imageUrl)}`, {signal: AbortSignal.timeout(10000)});
+    if (res.ok && res.headers.get('content-type')?.startsWith('image/')) {
       const blob = await res.blob();
       const objectUrl = URL.createObjectURL(blob);
       const img = await loadImageCors(objectUrl);
@@ -607,6 +630,12 @@ async function removeBg(imageUrl) {
       URL.revokeObjectURL(objectUrl);
       return result;
     }
+  } catch(e) {}
+
+  // Strategy 3: allorigins raw proxy
+  try {
+    const img = await loadImageCors(`https://api.allorigins.win/raw?url=${encodeURIComponent(imageUrl)}`);
+    return processImageOnCanvas(img);
   } catch(e) {}
 
   return null;
@@ -1084,6 +1113,104 @@ function setStudioMode(mode){
   document.getElementById('smode-auto').classList.toggle('active',mode==='auto');
   document.getElementById('smode-canvas').classList.toggle('active',mode==='canvas');
   document.getElementById('studio-canvas-note').classList.toggle('hidden',mode!=='canvas');
+}
+
+// ── Paste / Drop / File input ─────────────────────────────────────────────────
+document.addEventListener('paste', async (e) => {
+  const items = [...(e.clipboardData?.items || [])];
+  const imageItems = items.filter(i => i.type.startsWith('image/'));
+  if (!imageItems.length) return;
+  e.preventDefault();
+  const files = imageItems.map(i => i.getAsFile()).filter(Boolean);
+  await processDroppedFiles(files);
+});
+
+function pasteDragOver(e) {
+  e.preventDefault();
+  document.getElementById('paste-zone').style.borderColor = 'var(--accent-border)';
+  document.getElementById('paste-zone').style.background = 'var(--accent-dim)';
+}
+
+function pasteDragLeave(e) {
+  document.getElementById('paste-zone').style.borderColor = 'rgba(255,255,255,0.15)';
+  document.getElementById('paste-zone').style.background = 'transparent';
+}
+
+function pasteDrop(e) {
+  e.preventDefault();
+  pasteDragLeave(e);
+  const files = [...(e.dataTransfer?.files || [])].filter(f => f.type.startsWith('image/'));
+  if (files.length) processDroppedFiles(files);
+}
+
+function handleFileInput(e) {
+  const files = [...e.target.files].filter(f => f.type.startsWith('image/'));
+  if (files.length) processDroppedFiles(files);
+  e.target.value = '';
+}
+
+async function processDroppedFiles(files) {
+  const row = document.getElementById('paste-preview-row');
+
+  for (const file of files) {
+    // Read file as data URL
+    const dataUrl = await new Promise(res => {
+      const reader = new FileReader();
+      reader.onload = e => res(e.target.result);
+      reader.readAsDataURL(file);
+    });
+
+    // Show a mini preview card while processing
+    const card = createCard(file.name.replace(/\.[^.]+$/,'').slice(0,22) || 'pasted image');
+    document.getElementById('extract-grid').appendChild(card);
+    document.getElementById('extract-results').classList.remove('hidden');
+    setSt('loading', `Removing background from ${file.name || 'pasted image'}...`);
+
+    try {
+      // Load into image element directly from data URL — no CORS issues
+      const final = await removeBgFromDataUrl(dataUrl);
+      updateCard(card, final, final ? 'done' : 'error');
+      if (final) extractedImageUrls.push(final);
+      setSt('done', 'Background removed — ready to download or copy');
+    } catch(e) {
+      updateCard(card, null, 'error');
+      setSt('error', 'Failed to process image');
+    }
+  }
+}
+
+// Removes background from a data URL directly — no CORS issues at all
+async function removeBgFromDataUrl(dataUrl) {
+  return new Promise(resolve => {
+    const img = new Image();
+    img.onload = () => {
+      try {
+        const c = document.createElement('canvas');
+        c.width = img.width; c.height = img.height;
+        const ctx = c.getContext('2d');
+        ctx.drawImage(img, 0, 0);
+        const d = ctx.getImageData(0, 0, c.width, c.height);
+        const px = d.data, w = c.width, h = c.height;
+        const corners = [
+          [px[0],px[1],px[2]],
+          [px[(w-1)*4],px[(w-1)*4+1],px[(w-1)*4+2]],
+          [px[(h-1)*w*4],px[(h-1)*w*4+1],px[(h-1)*w*4+2]],
+          [px[((h-1)*w+w-1)*4],px[((h-1)*w+w-1)*4+1],px[((h-1)*w+w-1)*4+2]]
+        ];
+        const bgR=Math.round(corners.reduce((a,c)=>a+c[0],0)/4);
+        const bgG=Math.round(corners.reduce((a,c)=>a+c[1],0)/4);
+        const bgB=Math.round(corners.reduce((a,c)=>a+c[2],0)/4);
+        const tol=40;
+        for(let i=0;i<px.length;i+=4){
+          if(Math.abs(px[i]-bgR)<tol&&Math.abs(px[i+1]-bgG)<tol&&Math.abs(px[i+2]-bgB)<tol) px[i+3]=0;
+        }
+        ctx.putImageData(d,0,0);
+        resolve(c.toDataURL('image/png'));
+      } catch(e) { resolve(null); }
+    };
+    img.onerror = () => resolve(null);
+    img.src = dataUrl;
+  });
 }
 
 // ── Download / Copy ────────────────────────────────────────────────────────────
