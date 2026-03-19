@@ -609,7 +609,6 @@ function processImageOnCanvas(img, tol=40) {
   const bgR=Math.round(corners.reduce((a,c)=>a+c[0],0)/4);
   const bgG=Math.round(corners.reduce((a,c)=>a+c[1],0)/4);
   const bgB=Math.round(corners.reduce((a,c)=>a+c[2],0)/4);
-  const tol=40;
   for(let i=0;i<px.length;i+=4){
     if(Math.abs(px[i]-bgR)<tol&&Math.abs(px[i+1]-bgG)<tol&&Math.abs(px[i+2]-bgB)<tol) px[i+3]=0;
   }
@@ -627,7 +626,7 @@ function loadImageCors(src) {
   });
 }
 
-async function removeBg(imageUrl) {
+async function removeBg(imageUrl, tol=40) {
   // If already routed through our proxy, load directly
   if (imageUrl.startsWith('/api/image') || imageUrl.startsWith('data:')) {
     try {
@@ -669,9 +668,7 @@ async function removeBg(imageUrl) {
   return null;
 }
 
-async function removeBgWithTol(imageUrl, tol) {
-  return removeBg(imageUrl, tol);
-}
+
 
 // ── Card helpers ───────────────────────────────────────────────────────────────
 function createCard(label) {
@@ -682,39 +679,40 @@ function createCard(label) {
 }
 
 function addToleranceSlider(card) {
-  // Don't add twice
   if (card.nextElementSibling?.classList.contains('tol-wrap')) return;
   const wrap = document.createElement('div');
   wrap.className = 'tol-wrap';
-  wrap.style.cssText = 'padding:6px 8px 4px;background:var(--surface);border:0.5px solid var(--border2);border-top:none;border-radius:0 0 var(--rad) var(--rad);display:flex;align-items:center;gap:8px;';
+  wrap.style.cssText = 'padding:6px 8px 6px;background:var(--surface);border:0.5px solid var(--border2);border-top:none;border-radius:0 0 var(--rad) var(--rad);display:flex;align-items:center;gap:8px;';
+  const valId = 'tv-' + Math.random().toString(36).slice(2,7);
   wrap.innerHTML = `
-    <span style="font-size:9px;font-family:var(--mono);color:var(--muted);white-space:nowrap;">bg tol</span>
-    <input type="range" min="0" max="100" value="40" step="1" style="flex:1;height:3px;accent-color:var(--accent);cursor:pointer;" oninput="reTolLabel(this)" onchange="reprocessCard(this)">
-    <span style="font-size:9px;font-family:var(--mono);color:var(--accent);min-width:22px;text-align:right;" class="tol-val">40</span>`;
+    <span style="font-size:9px;font-family:'DM Mono',monospace;color:var(--muted);white-space:nowrap;">bg tol</span>
+    <input type="range" min="0" max="100" value="40" step="1"
+      style="flex:1;cursor:pointer;accent-color:#c8f53a;"
+      oninput="document.getElementById('${valId}').textContent=this.value"
+      onchange="reprocessCard(this)">
+    <span id="${valId}" style="font-size:9px;font-family:'DM Mono',monospace;color:#c8f53a;min-width:22px;text-align:right;">40</span>`;
   card.insertAdjacentElement('afterend', wrap);
-}
-
-function reTolLabel(slider) {
-  slider.closest('.tol-wrap').querySelector('.tol-val').textContent = slider.value;
 }
 
 async function reprocessCard(slider) {
   const wrap = slider.closest('.tol-wrap');
   const card = wrap.previousElementSibling;
   const origUrl = card.dataset.origUrl;
-  if (!origUrl) return;
+  if (!origUrl) { console.warn('No origUrl on card', card); return; }
   const tol = parseInt(slider.value);
-
-  // Show reprocessing state
-  const img = card.querySelector('img');
-  if (img) img.style.opacity = '0.3';
-
-  const final = await removeBgWithTol(origUrl, tol);
-  if (final) {
-    if (img) { img.src = final; img.style.opacity = '1'; }
-    card.dataset.src = final;
-  } else {
-    if (img) img.style.opacity = '1';
+  const existingImg = card.querySelector('img');
+  if (existingImg) existingImg.style.opacity = '0.3';
+  try {
+    const final = await removeBg(origUrl, tol);
+    if (final) {
+      if (existingImg) { existingImg.src = final; existingImg.style.opacity = '1'; }
+      card.dataset.src = final;
+    } else {
+      if (existingImg) existingImg.style.opacity = '1';
+    }
+  } catch(e) {
+    if (existingImg) existingImg.style.opacity = '1';
+    console.error('reprocessCard error:', e);
   }
 }
 function updateCard(card, imgUrl, state, origUrl) {
