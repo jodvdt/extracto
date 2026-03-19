@@ -445,19 +445,27 @@ async function s1_shopify(url) {
 async function s2_proxy(url) {
   try {
     const res = await fetch(`/api/proxy?url=${encodeURIComponent(url)}`, {signal:AbortSignal.timeout(10000)});
-    if (!res.ok) return null;
+    if (!res.ok) { log('proxy','tag-fail',`Proxy returned ${res.status}`); return null; }
     const data = await res.json();
-    return extractFromHtml(data?.html || '', url, 'proxy');
-  } catch { return null; }
+    const html = data?.html || '';
+    if (!html) { log('proxy','tag-fail','Proxy returned empty HTML'); return null; }
+    log('proxy','tag-try',`Got ${html.length} chars of HTML`);
+    return extractFromHtml(html, url, 'proxy');
+  } catch(e) { log('proxy','tag-fail',`Proxy error: ${e.message}`); return null; }
 }
 
 async function s3_allorigins(url) {
   try {
     const res = await fetch(`https://api.allorigins.win/get?url=${encodeURIComponent(url)}`, {signal:AbortSignal.timeout(10000)});
-    if (!res.ok) return null;
+    if (!res.ok) { log('allorigins','tag-fail',`allorigins returned ${res.status}`); return null; }
     const data = await res.json();
-    return extractFromHtml(data?.contents || '', url, 'allorigins');
-  } catch { return null; }
+    const html = data?.contents || '';
+    if (!html) { log('allorigins','tag-fail','allorigins returned empty HTML'); return null; }
+    log('allorigins','tag-try',`Got ${html.length} chars of HTML`);
+    const result = extractFromHtml(html, url, 'allorigins');
+    if (!result) log('allorigins','tag-fail','No image found in HTML');
+    return result;
+  } catch(e) { log('allorigins','tag-fail',`allorigins error: ${e.message}`); return null; }
 }
 
 async function s4_gemini(url) {
