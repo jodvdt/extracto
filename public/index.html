@@ -301,7 +301,7 @@ https://anysite.com/product/item-two"></textarea>
 
 </div>
   <div style="text-align:center;margin-top:3rem;font-size:10px;font-family:'DM Mono',monospace;color:#333;letter-spacing:.5px;">
-    Extracto v2.0 &copy; 2026 Jonas for Devote Digital
+    Extracto v2.1 &copy; 2026 Jonas for Devote Digital
   </div>
 </div>
 
@@ -450,6 +450,13 @@ function labelFromUrl(url) {
 // ── Image fetching — 4 strategies ─────────────────────────────────────────────
 async function fetchImageUrl(url) {
   log('try','tag-try',`Fetching ${labelFromUrl(url)}...`);
+
+  // Direct image URL -- skip all scraping, load immediately
+  if (url.match(/\.(jpg|jpeg|png|webp|gif)(\?.*)?$/i)) {
+    log('direct','tag-ok',`Direct image URL detected`);
+    return `/api/image?url=${encodeURIComponent(url)}`;
+  }
+
   const isShopify = url.includes('myshopify') || url.includes('/products/');
 
   // Shopify: get image URL directly
