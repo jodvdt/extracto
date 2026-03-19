@@ -301,7 +301,7 @@ https://anysite.com/product/item-two"></textarea>
 
 </div>
   <div style="text-align:center;margin-top:3rem;font-size:10px;font-family:'DM Mono',monospace;color:#333;letter-spacing:.5px;">
-    Extracto v1.9 &copy; 2026 Jonas for Devote Digital
+    Extracto v2.0 &copy; 2026 Jonas for Devote Digital
   </div>
 </div>
 
@@ -546,6 +546,8 @@ async function s1_shopify(url) {
 }
 
 async function s2_proxy(url) {
+  // Amazon blocks proxies entirely -- skip immediately
+  if (url.includes('amazon.com') || url.includes('amazon.com.au') || url.includes('amzn.')) return null;
   try {
     const res = await fetch(`/api/proxy?url=${encodeURIComponent(url)}`, {signal:AbortSignal.timeout(10000)});
     if (!res.ok) { log('proxy','tag-fail',`Proxy returned ${res.status}`); return null; }
@@ -553,7 +555,12 @@ async function s2_proxy(url) {
     const html = data?.html || '';
     if (!html) { log('proxy','tag-fail','Proxy returned empty HTML'); return null; }
     if (debugMode) log('proxy','tag-try',`Got ${html.length} chars of HTML`);
-    return extractFromHtml(html, url, 'proxy');
+    const found = extractFromHtml(html, url, 'proxy');
+    if (!found) {
+      log('proxy','tag-fail','Proxy got HTML but no image found — skipping allorigins');
+      return 'NO_IMAGE'; // sentinel: proxy worked but found nothing, skip allorigins
+    }
+    return found;
   } catch(e) { log('proxy','tag-fail',`Proxy error: ${e.message}`); return null; }
 }
 
