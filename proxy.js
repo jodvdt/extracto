@@ -1,25 +1,12 @@
-export const config = { runtime: 'edge' };
+export default async function handler(req, res) {
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
 
-export default async function handler(req) {
-  if (req.method === 'OPTIONS') {
-    return new Response(null, {
-      headers: {
-        'Access-Control-Allow-Origin': '*',
-        'Access-Control-Allow-Methods': 'GET, OPTIONS',
-        'Access-Control-Allow-Headers': 'Content-Type',
-      }
-    });
-  }
+  if (req.method === 'OPTIONS') { res.status(200).end(); return; }
 
-  const { searchParams } = new URL(req.url);
-  const target = searchParams.get('url');
-
-  if (!target) {
-    return new Response(JSON.stringify({ error: 'Missing url param' }), {
-      status: 400,
-      headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' }
-    });
-  }
+  const target = req.query?.url || new URL(req.url, 'http://localhost').searchParams.get('url');
+  if (!target) { res.status(400).json({ error: 'Missing url param' }); return; }
 
   try {
     const response = await fetch(target, {
@@ -30,20 +17,10 @@ export default async function handler(req) {
       },
       signal: AbortSignal.timeout(10000),
     });
-
     const html = await response.text();
-
-    return new Response(JSON.stringify({ html }), {
-      headers: {
-        'Content-Type': 'application/json',
-        'Access-Control-Allow-Origin': '*',
-        'Cache-Control': 'public, max-age=600',
-      }
-    });
+    res.setHeader('Cache-Control', 'public, max-age=600');
+    res.status(200).json({ html, status: response.status });
   } catch (err) {
-    return new Response(JSON.stringify({ error: err.message }), {
-      status: 500,
-      headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' }
-    });
+    res.status(500).json({ error: err.message });
   }
 }
