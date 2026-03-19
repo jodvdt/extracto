@@ -175,12 +175,15 @@ hr{border:none;border-top:0.5px solid var(--border);margin:1.5rem 0;}
         <div class="logo-sub">Paste a brief or links. Get images.</div>
       </div>
     </div>
-    <button class="cog-btn" onclick="toggleSettings()">
-      <svg width="15" height="15" viewBox="0 0 15 15" fill="none">
-        <circle cx="7.5" cy="7.5" r="2" stroke="currentColor" stroke-width="1.2"/>
-        <path d="M7.5 1v1.5M7.5 12.5V14M1 7.5h1.5M12.5 7.5H14M2.9 2.9l1.1 1.1M11 11l1.1 1.1M2.9 12.1L4 11M11 4l1.1-1.1" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/>
-      </svg>
-    </button>
+    <div style="display:flex;gap:8px;align-items:center;">
+      <button id="debug-btn" onclick="toggleDebug()" style="height:28px;padding:0 10px;background:var(--surface);border:0.5px solid var(--border2);border-radius:6px;color:var(--muted);font-family:var(--mono);font-size:10px;cursor:pointer;transition:all .15s;letter-spacing:.5px;">DEBUG</button>
+      <button class="cog-btn" onclick="toggleSettings()">
+        <svg width="15" height="15" viewBox="0 0 15 15" fill="none">
+          <circle cx="7.5" cy="7.5" r="2" stroke="currentColor" stroke-width="1.2"/>
+          <path d="M7.5 1v1.5M7.5 12.5V14M1 7.5h1.5M12.5 7.5H14M2.9 2.9l1.1 1.1M11 11l1.1 1.1M2.9 12.1L4 11M11 4l1.1-1.1" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/>
+        </svg>
+      </button>
+    </div>
   </div>
 
   <!-- Settings -->
@@ -222,7 +225,10 @@ https://anysite.com/product/item-two"></textarea>
   <div class="status-bar hidden" id="sbar"><div class="sdot" id="sdot"></div><span id="stxt"></span></div>
 
   <!-- Log -->
-  <div class="pipeline hidden" id="pipeline"></div>
+  <div style="position:relative;">
+    <div class="pipeline hidden" id="pipeline" style="max-height:110px;"></div>
+    <button onclick="copyLog()" id="copy-log-btn" style="position:absolute;top:6px;right:8px;background:var(--surface3);border:0.5px solid var(--border2);border-radius:4px;padding:2px 7px;font-size:9px;font-family:var(--mono);color:var(--muted);cursor:pointer;z-index:10;display:none;">copy log</button>
+  </div>
 
   <!-- Extract results -->
   <div id="extract-results" class="hidden">
@@ -295,7 +301,7 @@ https://anysite.com/product/item-two"></textarea>
 
 </div>
   <div style="text-align:center;margin-top:3rem;font-size:10px;font-family:'DM Mono',monospace;color:#333;letter-spacing:.5px;">
-    Extracto v1.6 &copy; 2026 Jonas for Devote Digital
+    Extracto v1.7b-debug &copy; 2026 Jonas for Devote Digital
   </div>
 </div>
 
@@ -356,8 +362,23 @@ function setSt(state, msg) {
   document.getElementById('stxt').textContent = msg;
 }
 
+// ── Debug mode ─────────────────────────────────────────────────────────────────
+let debugMode = false;
+function toggleDebug() {
+  debugMode = !debugMode;
+  const btn = document.getElementById('debug-btn');
+  const panel = document.getElementById('pipeline');
+  btn.style.background = debugMode ? 'var(--accent)' : 'var(--surface)';
+  btn.style.color = debugMode ? '#0b0b0b' : 'var(--muted)';
+  btn.style.borderColor = debugMode ? 'transparent' : 'var(--border2)';
+  panel.style.maxHeight = debugMode ? '300px' : '110px';
+}
+
 // ── Log ────────────────────────────────────────────────────────────────────────
+let fullLog = []; // store all log entries for copy
+
 function log(tag, cls, msg) {
+  fullLog.push({ tag, cls, msg, time: new Date().toLocaleTimeString() });
   const p = document.getElementById('pipeline');
   p.classList.remove('hidden');
   const l = document.createElement('div');
@@ -366,10 +387,52 @@ function log(tag, cls, msg) {
   p.appendChild(l);
   p.scrollTop = p.scrollHeight;
 }
+
+function logSection(url) {
+  const p = document.getElementById('pipeline');
+  p.classList.remove('hidden');
+  const copyBtn = document.getElementById('copy-log-btn');
+  if (copyBtn) copyBtn.style.display = 'block';
+  const l = document.createElement('div');
+  l.style.cssText = 'font-size:10px;font-family:var(--mono);color:var(--muted2);padding:4px 0 2px;border-top:0.5px solid var(--border);margin-top:4px;';
+  l.textContent = '── ' + url;
+  p.appendChild(l);
+  p.scrollTop = p.scrollHeight;
+}
+
+function logResult(url, success, imageUrl) {
+  const p = document.getElementById('pipeline');
+  const l = document.createElement('div');
+  l.className = 'log-line';
+  l.style.cssText = 'margin-bottom:4px;';
+  if (success) {
+    l.innerHTML = `<span class="tag tag-ok">PASS</span><span style="color:var(--success)">${labelFromUrl(url)}</span>`;
+    if (debugMode && imageUrl) {
+      const sub = document.createElement('div');
+      sub.style.cssText = 'font-size:9px;font-family:var(--mono);color:var(--muted);padding-left:44px;word-break:break-all;';
+      sub.textContent = imageUrl.startsWith('/api/image') ? decodeURIComponent(imageUrl.replace('/api/image?url=','')) : imageUrl;
+      p.appendChild(l);
+      p.appendChild(sub);
+      p.scrollTop = p.scrollHeight;
+      return;
+    }
+  } else {
+    l.innerHTML = `<span class="tag tag-fail">FAIL</span><span style="color:var(--danger)">${labelFromUrl(url)}</span>`;
+  }
+  p.appendChild(l);
+  p.scrollTop = p.scrollHeight;
+}
+
 function clearLog() {
+  fullLog = [];
   const p = document.getElementById('pipeline');
   p.innerHTML = '';
   p.classList.add('hidden');
+}
+
+function copyLog() {
+  const text = fullLog.map(e => `[${e.time}] ${e.tag.toUpperCase()}: ${e.msg}`).join('\n');
+  navigator.clipboard.writeText(text).then(() => toast('Log copied to clipboard'));
 }
 
 // ── URL helpers ────────────────────────────────────────────────────────────────
@@ -389,14 +452,17 @@ async function fetchImageUrl(url) {
   log('try','tag-try',`Fetching ${labelFromUrl(url)}...`);
   const isShopify = url.includes('myshopify') || url.includes('/products/');
 
-  // Shopify: get image URL directly, load as-is (Shopify CDN has CORS headers)
+  // Shopify: get image URL directly
   if (isShopify) {
     const imgUrl = await s1_shopify(url);
     if (imgUrl) return imgUrl;
   }
 
-  // Non-Shopify: find image URL, then wrap it through our image proxy
-  // so removeBg can access pixels without CORS blocking
+  // WooCommerce REST API: try before scraping HTML
+  const wcImg = await s1b_woocommerce(url);
+  if (wcImg) return `/api/image?url=${encodeURIComponent(wcImg)}`;
+
+  // Non-Shopify: find image URL then wrap through image proxy
   let imgUrl = await s2_proxy(url)
             || await s3_allorigins(url)
             || await s4_gemini(url);
@@ -406,12 +472,48 @@ async function fetchImageUrl(url) {
     return null;
   }
 
-  // Wrap through /api/image so browser loads it with CORS headers from our server
   if (!isShopify && !imgUrl.startsWith('/api/image')) {
     return `/api/image?url=${encodeURIComponent(imgUrl)}`;
   }
 
   return imgUrl;
+}
+
+// Strategy 1b: WooCommerce REST API (works on many WP/WooCommerce stores)
+async function s1b_woocommerce(url) {
+  try {
+    const u = new URL(url);
+    // Extract product slug from URL
+    const slug = u.pathname.replace(/\/+$/, '').split('/').filter(Boolean).pop();
+    if (!slug) return null;
+
+    // Try WooCommerce v3 API (most common, no auth needed for public products)
+    const apiUrl = `${u.origin}/wp-json/wc/v3/products?slug=${slug}&per_page=1`;
+    const res = await fetch(`/api/proxy?url=${encodeURIComponent(apiUrl)}`, {signal: AbortSignal.timeout(8000)});
+    if (!res.ok) return null;
+    const data = await res.json();
+    const html = data?.html || '';
+    // WooCommerce returns JSON array
+    try {
+      const products = JSON.parse(html);
+      const img = products?.[0]?.images?.[0]?.src;
+      if (img) { log('woocommerce','tag-ok',`WooCommerce API found image for ${slug}`); return img; }
+    } catch(e) {}
+
+    // Try v2
+    const apiUrl2 = `${u.origin}/wp-json/wc/v2/products?slug=${slug}&per_page=1`;
+    const res2 = await fetch(`/api/proxy?url=${encodeURIComponent(apiUrl2)}`, {signal: AbortSignal.timeout(6000)});
+    if (!res2.ok) return null;
+    const data2 = await res2.json();
+    const html2 = data2?.html || '';
+    try {
+      const products2 = JSON.parse(html2);
+      const img2 = products2?.[0]?.images?.[0]?.src;
+      if (img2) { log('woocommerce','tag-ok',`WooCommerce v2 API found image for ${slug}`); return img2; }
+    } catch(e) {}
+
+    return null;
+  } catch(e) { return null; }
 }
 
 async function s1_shopify(url) {
@@ -439,7 +541,7 @@ async function s2_proxy(url) {
     const data = await res.json();
     const html = data?.html || '';
     if (!html) { log('proxy','tag-fail','Proxy returned empty HTML'); return null; }
-    log('proxy','tag-try',`Got ${html.length} chars of HTML`);
+    if (debugMode) log('proxy','tag-try',`Got ${html.length} chars of HTML`);
     return extractFromHtml(html, url, 'proxy');
   } catch(e) { log('proxy','tag-fail',`Proxy error: ${e.message}`); return null; }
 }
@@ -451,7 +553,7 @@ async function s3_allorigins(url) {
     const data = await res.json();
     const html = data?.contents || '';
     if (!html) { log('allorigins','tag-fail','allorigins returned empty HTML'); return null; }
-    log('allorigins','tag-try',`Got ${html.length} chars of HTML`);
+    if (debugMode) log('allorigins','tag-try',`Got ${html.length} chars of HTML`);
     const result = extractFromHtml(html, url, 'allorigins');
     if (!result) log('allorigins','tag-fail','No image found in HTML');
     return result;
@@ -824,20 +926,24 @@ async function runExtract(urls) {
   let done = 0;
   for (let i=0;i<urls.length;i++) {
     setSt('loading',`Processing ${i+1} of ${urls.length}...`);
+    logSection(urls[i]);
     const card = createCard(labelFromUrl(urls[i]));
     grid.appendChild(card);
+    let succeeded = false;
+    let finalImgUrl = null;
     try {
       const imgUrl = await fetchImageUrl(urls[i]);
       if (imgUrl) {
-        log('img','tag-try',`Loading: ${imgUrl.slice(0,80)}`);
+        if (debugMode) log('img','tag-try',`Loading: ${imgUrl.slice(0,100)}`);
         updateCard(card,null,'removing bg');
         const bgResult = await removeBg(imgUrl);
         const final = bgResult?.result ?? bgResult;
         const rawData = bgResult?.rawData ?? null;
         updateCard(card,final,final?'done':'error', rawData);
-        if(final){done++;extractedImageUrls.push(final);}
+        if(final){done++;extractedImageUrls.push(final);succeeded=true;finalImgUrl=imgUrl;}
       } else updateCard(card,null,'error');
     } catch(e){updateCard(card,null,'error');}
+    logResult(urls[i], succeeded, finalImgUrl);
     document.getElementById('rcnt').textContent=`${i+1} of ${urls.length}`;
   }
   setSt('done',`Done — ${done} of ${urls.length} image${urls.length!==1?'s':''} ready`);
