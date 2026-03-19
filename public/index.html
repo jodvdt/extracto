@@ -295,7 +295,7 @@ https://anysite.com/product/item-two"></textarea>
 
 </div>
   <div style="text-align:center;margin-top:3rem;font-size:10px;font-family:'DM Mono',monospace;color:#333;letter-spacing:.5px;">
-    Extracto v1.5 &copy; 2026 Jonas for Devote Digital
+    Extracto v1.6 &copy; 2026 Jonas for Devote Digital
   </div>
 </div>
 
@@ -510,9 +510,11 @@ function extractFromHtml(html, url, source) {
   if (!html) return null;
   const origin = (() => { try { return new URL(url).origin; } catch(e) { return ''; } })();
 
-  // og:image
+  // og:image -- try multiple formats including escaped quotes and newlines
   const og = html.match(/<meta[^>]+property=["']og:image["'][^>]+content=["']([^"']+)["']/i)
-           || html.match(/<meta[^>]+content=["']([^"']+)["'][^>]+property=["']og:image["']/i);
+           || html.match(/<meta[^>]+content=["']([^"']+)["'][^>]+property=["']og:image["']/i)
+           || html.match(/property="og:image"\s+content="([^"]+)"/i)
+           || html.match(/content="([^"]+)"\s+property="og:image"/i);
   if (og?.[1]?.startsWith('http')) { log(source,'tag-ok',`og:image found for ${labelFromUrl(url)}`); return og[1]; }
 
   // twitter:image
@@ -520,7 +522,17 @@ function extractFromHtml(html, url, source) {
            || html.match(/<meta[^>]+content=["']([^"']+)["'][^>]+name=["']twitter:image["']/i);
   if (tw?.[1]?.startsWith('http')) { log(source,'tag-ok',`twitter:image found for ${labelFromUrl(url)}`); return tw[1]; }
 
-  // JSON-LD
+  // JSON-LD product schema -- most reliable for WooCommerce and custom CMSes
+  // Look for @type: Product with image
+  const ldProductMatch = html.match(/"@type"\s*:\s*"Product"[^}]{0,2000}"image"\s*:\s*"(https?:\/\/[^"]+)"/is)
+    || html.match(/"image"\s*:\s*"(https?:\/\/[^"]+)"[^}]{0,2000}"@type"\s*:\s*"Product"/is);
+  if (ldProductMatch?.[1]) { log(source,'tag-ok',`JSON-LD product image for ${labelFromUrl(url)}`); return ldProductMatch[1]; }
+
+  // JSON-LD image array
+  const ldArr = html.match(/"@type"\s*:\s*"Product"[^}]{0,2000}"image"\s*:\s*\["(https?:\/\/[^"]+)"/is);
+  if (ldArr?.[1]) { log(source,'tag-ok',`JSON-LD product image array for ${labelFromUrl(url)}`); return ldArr[1]; }
+
+  // JSON-LD generic
   const ld = html.match(/"image"\s*:\s*"(https?:\/\/[^"]+\.(?:jpg|jpeg|png|webp)[^"]*)"/i);
   if (ld?.[1]) { log(source,'tag-ok',`JSON-LD image found for ${labelFromUrl(url)}`); return ld[1]; }
 
@@ -580,8 +592,11 @@ function extractFromHtml(html, url, source) {
       if (s.includes('/assets/')) n += 3;
       if (s.includes('/media/')) n += 2;
       if (s.includes('cdn')) n += 1;
-      // Penalise footer/map/social images
+      // Penalise footer/map/social/promo images
       if (s.includes('map') || s.includes('footer') || s.includes('social')) n -= 10;
+      // Builder.io CDN: only trust if it's clearly a product image
+      // Deprioritise generic builder.io assets (promo banners, section images)
+      if (s.includes('cdn.builder.io') || s.includes('builder.io/api')) n -= 3;
       return n;
     };
     return score(b) - score(a);
