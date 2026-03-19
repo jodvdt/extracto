@@ -242,7 +242,21 @@ https://anysite.com/product/item-two"></textarea>
   <!-- Bundle results -->
   <div id="bundle-results" class="hidden">
     <hr>
-    <span class="field-label">Bundle canvas — drag · resize · rotate</span>
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
+      <span class="field-label" style="margin:0">Bundle canvas — drag · resize · rotate</span>
+      <div style="position:relative;">
+        <select id="arrangement-select" onchange="changeArrangement()" style="height:30px;background:var(--surface2);border:0.5px solid var(--border2);border-radius:6px;padding:0 28px 0 10px;color:var(--text);font-family:var(--mono);font-size:11px;cursor:pointer;appearance:none;-webkit-appearance:none;outline:none;">
+          <option value="hero">Hero centre</option>
+          <option value="flatlay">Flat lay</option>
+          <option value="scattered">Scattered</option>
+          <option value="diagonal">Diagonal stack</option>
+          <option value="podium">Podium</option>
+        </select>
+        <div style="position:absolute;right:8px;top:50%;transform:translateY(-50%);pointer-events:none;color:var(--muted);">
+          <svg width="10" height="10" viewBox="0 0 10 10" fill="none"><path d="M1 3L5 7L9 3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </div>
+      </div>
+    </div>
     <div class="bundle-wrap">
       <div class="bundle-canvas" id="bcanvas" onmousedown="canvasDown(event)"></div>
       <div class="bcontrols">
@@ -301,7 +315,7 @@ https://anysite.com/product/item-two"></textarea>
 
 </div>
   <div style="text-align:center;margin-top:3rem;font-size:10px;font-family:'DM Mono',monospace;color:#333;letter-spacing:.5px;">
-    Extracto v2.5 &mdash; brewed by Jonas for Devote Digital</div>
+    Extracto v2.6 &mdash; brewed by Jonas for Devote Digital</div>
 </div>
 
 <script>
@@ -1260,6 +1274,229 @@ async function renderBundleCanvas() {
   }
 }
 
+// ── D3-force bundle layout ─────────────────────────────────────────────────────
+let currentArrangement = 'hero';
+
+function changeArrangement() {
+  currentArrangement = document.getElementById('arrangement-select').value;
+  const W = bc().offsetWidth, H = bc().offsetHeight;
+  applyArrangement(bundleItems, currentArrangement, W, H);
+  bundleItems.forEach(item => {
+    const el = document.getElementById('bi-'+item.id);
+    if (el) { applyT(el, item); if (item.zIndex) el.style.zIndex = item.zIndex; }
+  });
+  deselectAll();
+}
+
+function applyArrangement(items, type, W, H) {
+  switch(type) {
+    case 'flatlay':    flatlayLayout(items, W, H); break;
+    case 'scattered':  scatteredLayout(items, W, H); break;
+    case 'diagonal':   diagonalLayout(items, W, H); break;
+    case 'podium':     podiumLayout(items, W, H); break;
+    default:           d3ForceLayout(items, W, H); break;
+  }
+}
+
+// ── D3-Force hero layout ───────────────────────────────────────────────────────
+function d3ForceLayout(items, W, H) {
+  if (!items.length) return;
+  const count = items.length;
+
+  // Size items first -- hero biggest, others scaled down
+  const heroSz = Math.min(W * 0.38, H * 0.62);
+  items.forEach((item, i) => {
+    const scale = i === 0 ? 1 : 0.42 + Math.random() * 0.22;
+    item.w = heroSz * scale;
+    item.h = heroSz * scale;
+    item.zIndex = i === 0 ? 4 : 3 + Math.floor(Math.random() * 3);
+  });
+
+  // Set up nodes with initial positions in a tight ring around centre
+  const cx = W / 2, cy = H / 2;
+  const nodes = items.map((item, i) => ({
+    id: i,
+    x: i === 0 ? cx : cx + (Math.random()-0.5) * W * 0.3,
+    y: i === 0 ? cy : cy + (Math.random()-0.5) * H * 0.3,
+    r: (item.w / 2) * 0.7, // collision radius
+    isHero: i === 0,
+  }));
+
+  // Simple force simulation without D3 library
+  // (D3-force CDN has module issues in iframe -- implement manually)
+  const TICKS = 120;
+  const heroStrength = 0.15;
+  const repelStrength = 0.8;
+  const damping = 0.7;
+
+  // Velocities
+  const vx = new Array(count).fill(0);
+  const vy = new Array(count).fill(0);
+
+  for (let tick = 0; tick < TICKS; tick++) {
+    const progress = tick / TICKS;
+
+    nodes.forEach((n, i) => {
+      if (n.isHero) return; // hero stays fixed at centre
+
+      // Attraction to hero
+      const dx = nodes[0].x - n.x;
+      const dy = nodes[0].y - n.y;
+      const dist = Math.sqrt(dx*dx + dy*dy) || 1;
+      const targetDist = nodes[0].r + n.r + 4; // just touching hero
+
+      if (dist > targetDist) {
+        const force = heroStrength * (dist - targetDist) / dist;
+        vx[i] += dx * force;
+        vy[i] += dy * force;
+      }
+
+      // Repulsion from other non-hero nodes
+      nodes.forEach((m, j) => {
+        if (j === i) return;
+        const ex = n.x - m.x;
+        const ey = n.y - m.y;
+        const ed = Math.sqrt(ex*ex + ey*ey) || 1;
+        const minDist = n.r + m.r + 2;
+        if (ed < minDist) {
+          const force = repelStrength * (minDist - ed) / ed;
+          vx[i] += ex * force;
+          vy[i] += ey * force;
+        }
+      });
+
+      // Apply velocity with damping
+      vx[i] *= damping;
+      vy[i] *= damping;
+      n.x += vx[i];
+      n.y += vy[i];
+
+      // Keep within canvas bounds
+      const pad = n.r + 10;
+      n.x = Math.max(pad, Math.min(W - pad, n.x));
+      n.y = Math.max(pad, Math.min(H - pad, n.y));
+    });
+  }
+
+  // Apply positions back to items
+  nodes.forEach((n, i) => {
+    items[i].x = n.x - items[i].w / 2;
+    items[i].y = n.y - items[i].h / 2;
+    items[i].angle = n.isHero
+      ? (Math.random()-0.5) * 6
+      : (Math.random()-0.5) * 22;
+  });
+}
+
+// ── Flat lay layout ────────────────────────────────────────────────────────────
+function flatlayLayout(items, W, H) {
+  const count = items.length;
+  const cols = Math.ceil(Math.sqrt(count));
+  const rows = Math.ceil(count / cols);
+  const pad = W * 0.06;
+  const cellW = (W - pad*2) / cols;
+  const cellH = (H - pad*2) / rows;
+  const sz = Math.min(cellW, cellH) * 0.78;
+
+  items.forEach((item, i) => {
+    item.w = sz; item.h = sz;
+    item.x = pad + (i % cols) * cellW + (cellW - sz)/2;
+    item.y = pad + Math.floor(i / cols) * cellH + (cellH - sz)/2;
+    item.angle = (Math.random()-0.5) * 14;
+    item.zIndex = 1;
+  });
+}
+
+// ── Scattered layout ───────────────────────────────────────────────────────────
+function scatteredLayout(items, W, H) {
+  const base = Math.min(W, H) * 0.32;
+  items.forEach((item, i) => {
+    const sz = base * (0.7 + Math.random() * 0.55);
+    item.w = sz; item.h = sz;
+    item.x = W*0.05 + Math.random() * (W*0.85 - sz);
+    item.y = H*0.05 + Math.random() * (H*0.85 - sz);
+    item.angle = (Math.random()-0.5) * 36;
+    item.zIndex = i + 1;
+  });
+}
+
+// ── Diagonal stack layout ──────────────────────────────────────────────────────
+function diagonalLayout(items, W, H) {
+  const count = items.length;
+  const sz = Math.min(W, H) * 0.5;
+  const stepX = (W - sz) / Math.max(count, 1) * 0.7;
+  const stepY = (H - sz) / Math.max(count, 1) * 0.5;
+
+  items.forEach((item, i) => {
+    const scale = 1 - i * 0.06;
+    item.w = sz * scale; item.h = sz * scale;
+    item.x = W*0.04 + i * stepX;
+    item.y = H*0.08 + i * stepY;
+    item.angle = -8 + i * 3 + (Math.random()-0.5)*4;
+    item.zIndex = count - i;
+  });
+}
+
+// ── Podium layout ──────────────────────────────────────────────────────────────
+function podiumLayout(items, W, H) {
+  const count = items.length;
+  if (!count) return;
+
+  // Hero centre top, others arranged below like a podium
+  const heroSz = Math.min(W * 0.36, H * 0.55);
+  items[0].w = heroSz; items[0].h = heroSz;
+  items[0].x = (W - heroSz)/2;
+  items[0].y = H * 0.04;
+  items[0].angle = (Math.random()-0.5)*4;
+  items[0].zIndex = 5;
+
+  const rest = items.slice(1);
+  const rowSz = heroSz * 0.52;
+  const totalW = rest.length * rowSz + (rest.length-1) * 10;
+  const startX = (W - totalW) / 2;
+
+  rest.forEach((item, i) => {
+    item.w = rowSz; item.h = rowSz;
+    item.x = startX + i * (rowSz + 10);
+    item.y = H * 0.46 + (i%2===0?0:rowSz*0.08);
+    item.angle = (Math.random()-0.5)*12;
+    item.zIndex = 3;
+  });
+}
+
+function heroLayout(items, W, H) {
+  d3ForceLayout(items, W, H);
+}
+
+
+async function renderBundleCanvas() {
+  const c=bc();c.innerHTML='';
+  const W=c.offsetWidth,H=c.offsetHeight;
+
+  // Mount all items first (preserves img src), then apply hero layout
+  bundleItems.forEach(item=>mountItem(item));
+  heroLayout(bundleItems, W, H);
+  bundleItems.forEach(item=>{
+    const el=document.getElementById('bi-'+item.id);
+    if(el){ applyT(el,item); if(item.zIndex) el.style.zIndex=item.zIndex; }
+  });
+
+  // Refine with Gemini classification if key available
+  const key=getKey();
+  if (key&&bundleItems.length) {
+    log('ai','tag-ai','Analysing image types for smart layout...');
+    try {
+      const types=await Promise.all(bundleItems.map(item=>classifyImage(item.src)));
+      log('ai','tag-ok',`Types: ${types.join(', ')}`);
+      smartLayout(bundleItems,types,W,H);
+      bundleItems.forEach(item=>{
+        const el=document.getElementById('bi-'+item.id);
+        if(el)applyT(el,item);
+      });
+    } catch(e){}
+  }
+}
+
 function heroLayout(items, W, H) {
   const count = items.length;
   if (!count) return;
@@ -1509,13 +1746,10 @@ function onUp(){dragState=null;document.removeEventListener('mousemove',onMove);
 
 function autoArrange(){
   const c=bc(),W=c.offsetWidth,H=c.offsetHeight;
-  heroLayout(bundleItems,W,H);
+  applyArrangement(bundleItems, currentArrangement, W, H);
   bundleItems.forEach(item=>{
     const el=document.getElementById('bi-'+item.id);
-    if(el){
-      applyT(el,item);
-      if(item.zIndex) el.style.zIndex=item.zIndex;
-    }
+    if(el){ applyT(el,item); if(item.zIndex) el.style.zIndex=item.zIndex; }
   });
   deselectAll();
 }
