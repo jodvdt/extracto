@@ -315,7 +315,7 @@ https://anysite.com/product/item-two"></textarea>
 
 </div>
   <div style="text-align:center;margin-top:3rem;font-size:10px;font-family:'DM Mono',monospace;color:#333;letter-spacing:.5px;">
-    Extracto v2.9 &mdash; brewed by Jonas for Devote Digital</div>
+    Extracto v3.0 &mdash; brewed by Jonas for Devote Digital</div>
 </div>
 
 <script>
@@ -1304,14 +1304,16 @@ function d3ForceLayout(items, W, H) {
   if (!items.length) return;
   const count = items.length;
 
-  // Detect hero -- respect manual override, otherwise use opaque pixel count
+  // Ground line -- everything anchors to this Y position
+  const groundY = H * 0.78;
+  const cx = W * 0.5;
+
+  // Detect hero
   const heroIdx = (() => {
-    // If user manually set a hero, use that
     if (manualHeroId !== null) {
       const idx = items.findIndex(it => it.id === manualHeroId);
       if (idx >= 0) return idx;
     }
-    // Auto-detect: item with most non-transparent pixels
     let best = 0, bestScore = 0;
     items.forEach((item, i) => {
       const el = document.getElementById('bi-'+item.id);
@@ -1320,9 +1322,8 @@ function d3ForceLayout(items, W, H) {
       try {
         const sc = document.createElement('canvas');
         sc.width = 40; sc.height = 40;
-        const sctx = sc.getContext('2d');
-        sctx.drawImage(img, 0, 0, 40, 40);
-        const d = sctx.getImageData(0, 0, 40, 40).data;
+        sc.getContext('2d').drawImage(img, 0, 0, 40, 40);
+        const d = sc.getContext('2d').getImageData(0, 0, 40, 40).data;
         let opaque = 0;
         for (let p = 3; p < d.length; p += 4) if (d[p] > 30) opaque++;
         if (opaque > bestScore) { bestScore = opaque; best = i; }
@@ -1331,94 +1332,81 @@ function d3ForceLayout(items, W, H) {
     return best;
   })();
 
-  // Move hero to front of array temporarily for layout
+  // Reorder so hero is first
   const ordered = [items[heroIdx], ...items.filter((_,i) => i !== heroIdx)];
 
-  // Size items -- hero dominant, others varied
-  const heroSz = Math.min(W * 0.44, H * 0.68);
+  // Size items -- hero largest, depth-based scaling for others
+  // Items further from centre (sides) are slightly larger (foreshortening effect)
+  const heroSz = Math.min(W * 0.32, H * 0.60);
+
+  // Assign positions emanating from centre ground point
+  // Fan out in a semicircle on the ground plane
+  // Hero sits back-centre, supporters fan forward and sideways
+  const positions = getEmanatingPositions(count, W, H, groundY, cx, heroSz);
+
   ordered.forEach((item, i) => {
-    const scale = i === 0 ? 1 : 0.38 + (i % 3) * 0.08 + Math.random() * 0.12;
-    item.w = heroSz * scale;
-    item.h = heroSz * scale;
-    item.zIndex = i === 0 ? 4 : 2 + (i % 4);
+    const pos = positions[i];
+    item.w = pos.sz;
+    item.h = pos.sz;
+    // Anchor bottom of item to ground line
+    item.x = pos.cx - pos.sz / 2;
+    item.y = groundY - pos.sz + pos.sz * 0.12; // sit ON the ground
+    item.angle = pos.angle;
+    item.zIndex = pos.z;
+  });
+}
+
+function getEmanatingPositions(count, W, H, groundY, cx, heroSz) {
+  // All items sit on the ground line, fanning out from centre
+  // Hero is slightly back (higher Y offset), front items are lower and larger
+  const positions = [];
+
+  // Hero -- centre, slightly raised, medium-large
+  positions.push({
+    cx: cx,
+    sz: heroSz,
+    angle: (Math.random()-0.5) * 4,
+    z: 3,
   });
 
-  // Nodes -- hero fixed dead centre, others start in tight ring
-  const cx = W * 0.5, cy = H * 0.5;
-  const nodes = ordered.map((item, i) => {
-    const angle = i === 0 ? 0 : ((i-1) / (ordered.length-1)) * Math.PI * 2;
-    const initR = heroSz * 0.55;
-    return {
-      x: i === 0 ? cx : cx + Math.cos(angle) * initR,
-      y: i === 0 ? cy : cy + Math.sin(angle) * initR,
-      r: (item.w * 0.42),
-      isHero: i === 0,
-      vx: 0, vy: 0,
-    };
-  });
+  if (count === 1) return positions;
 
-  // Physics simulation
-  const TICKS = 200;
-  for (let tick = 0; tick < TICKS; tick++) {
-    const cooling = 1 - tick / TICKS; // reduce forces over time
+  // Supporting items fan out in a V shape from hero
+  // Odd items go left, even go right, alternating
+  // Distance from centre increases with each item
+  // Items closer to viewer (lower on canvas) are slightly larger
 
-    nodes.forEach((n, i) => {
-      if (n.isHero) return;
+  const supporting = count - 1;
+  const spreadX = W * 0.18; // base horizontal spread per item
+  const sideScales = [0.72, 0.66, 0.60, 0.56, 0.52, 0.48]; // size reduction per slot
 
-      // Strong attraction toward hero surface (not centre)
-      const dx = nodes[0].x - n.x;
-      const dy = nodes[0].y - n.y;
-      const dist = Math.sqrt(dx*dx + dy*dy) || 1;
-      const targetDist = nodes[0].r + n.r - 8; // slight overlap for natural look
-      const gap = dist - targetDist;
-      if (Math.abs(gap) > 1) {
-        const f = 0.18 * gap / dist * cooling;
-        n.vx += dx * f;
-        n.vy += dy * f;
-      }
+  // Slot definitions: [side(-1=left,1=right), depth(0=same,1=forward), spreadMult]
+  const slots = [
+    { side:  1, depth: 0.10, spread: 0.90, zOff: 2 }, // right near
+    { side: -1, depth: 0.08, spread: 0.85, zOff: 1 }, // left near
+    { side:  1, depth: 0.22, spread: 1.60, zOff: 4 }, // right far
+    { side: -1, depth: 0.20, spread: 1.50, zOff: 3 }, // left far
+    { side:  0, depth: 0.28, spread: 0.00, zOff: 5 }, // front centre
+    { side:  1, depth: 0.32, spread: 2.10, zOff: 5 }, // far right
+    { side: -1, depth: 0.30, spread: 2.00, zOff: 4 }, // far left
+  ];
 
-      // Repulsion from other nodes (prevent stacking)
-      nodes.forEach((m, j) => {
-        if (j === i) return;
-        const ex = n.x - m.x;
-        const ey = n.y - m.y;
-        const ed = Math.sqrt(ex*ex + ey*ey) || 1;
-        const minD = n.r + m.r - 12; // allow slight overlap
-        if (ed < minD) {
-          const f = 0.9 * (minD - ed) / ed;
-          n.vx += ex * f;
-          n.vy += ey * f;
-        }
-      });
+  for (let i = 0; i < supporting; i++) {
+    const slot = slots[i % slots.length];
+    const szScale = sideScales[Math.min(i, sideScales.length-1)];
+    const sz = heroSz * szScale;
+    const itemCx = cx + slot.side * spreadX * slot.spread + (Math.random()-0.5)*W*0.04;
+    const angleBase = slot.side * (8 + i * 3);
 
-      // Gentle pull toward canvas centre to prevent edge drift
-      n.vx += (cx - n.x) * 0.008 * cooling;
-      n.vy += (cy - n.y) * 0.008 * cooling;
-
-      // Damping + integrate
-      n.vx *= 0.65;
-      n.vy *= 0.65;
-      n.x += n.vx;
-      n.y += n.vy;
-
-      // Soft canvas bounds
-      const pad = n.r * 0.5;
-      if (n.x < pad) { n.x = pad; n.vx *= -0.3; }
-      if (n.x > W-pad) { n.x = W-pad; n.vx *= -0.3; }
-      if (n.y < pad) { n.y = pad; n.vy *= -0.3; }
-      if (n.y > H-pad) { n.y = H-pad; n.vy *= -0.3; }
+    positions.push({
+      cx: itemCx,
+      sz: sz,
+      angle: angleBase + (Math.random()-0.5) * 10,
+      z: 2 + slot.zOff,
     });
   }
 
-  // Apply back to original items array
-  ordered.forEach((item, i) => {
-    const n = nodes[i];
-    item.x = n.x - item.w / 2;
-    item.y = n.y - item.h / 2;
-    item.angle = n.isHero
-      ? (Math.random()-0.5) * 5
-      : (Math.random()-0.5) * 28;
-  });
+  return positions;
 }
 
 // ── Flat lay layout ────────────────────────────────────────────────────────────
