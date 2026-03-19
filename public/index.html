@@ -301,8 +301,7 @@ https://anysite.com/product/item-two"></textarea>
 
 </div>
   <div style="text-align:center;margin-top:3rem;font-size:10px;font-family:'DM Mono',monospace;color:#333;letter-spacing:.5px;">
-    Extracto v2.1 &copy; 2026 Jonas for Devote Digital
-  </div>
+    Extracto v2.2 &mdash; brewed by Jonas for Devote Digital</div>
 </div>
 
 <script>
@@ -1236,17 +1235,11 @@ async function renderBundleCanvas() {
   const c=bc();c.innerHTML='';
   const W=c.offsetWidth,H=c.offsetHeight;
 
-  // Initial random placement
-  bundleItems.forEach(item=>{
-    const sz=Math.max(80,Math.min(160,W/Math.max(bundleItems.length,2)*1.4));
-    item.w=sz;item.h=sz;
-    item.x=40+Math.random()*(W-sz-80);
-    item.y=30+Math.random()*(H-sz-60);
-    item.angle=(Math.random()-.5)*20;
-    mountItem(item);
-  });
+  // Apply hero-centre layout immediately
+  heroLayout(bundleItems, W, H);
+  bundleItems.forEach(item=>mountItem(item));
 
-  // Smart layout if Gemini key available
+  // Refine with Gemini classification if key available
   const key=getKey();
   if (key&&bundleItems.length) {
     log('ai','tag-ai','Analysing image types for smart layout...');
@@ -1262,6 +1255,69 @@ async function renderBundleCanvas() {
   }
 }
 
+function heroLayout(items, W, H) {
+  const count = items.length;
+  if (!count) return;
+
+  const cx = W / 2;
+  const cy = H * 0.52;
+
+  if (count === 1) {
+    const sz = Math.min(W, H) * 0.65;
+    items[0].w = sz; items[0].h = sz;
+    items[0].x = cx - sz/2; items[0].y = cy - sz/2;
+    items[0].angle = 0;
+    items[0].zIndex = 1;
+    return;
+  }
+
+  // Hero: largest, dead centre, slight angle
+  const heroSz = Math.min(W * 0.42, H * 0.68);
+  items[0].w = heroSz;
+  items[0].h = heroSz;
+  items[0].x = cx - heroSz/2;
+  items[0].y = cy - heroSz/2 - H*0.04;
+  items[0].angle = (Math.random()-0.5) * 6;
+  items[0].zIndex = 5;
+
+  if (count === 2) {
+    // Single supporting item -- slightly overlapping hero, offset right
+    const sz = heroSz * 0.7;
+    items[1].w = sz; items[1].h = sz;
+    items[1].x = cx + heroSz*0.22;
+    items[1].y = cy - sz*0.3;
+    items[1].angle = 8 + Math.random()*6;
+    items[1].zIndex = 3;
+    return;
+  }
+
+  // Supporting items arranged in a loose cluster around hero
+  // Positions relative to centre: front-left, front-right, back-left, back-right, front-centre
+  const positions = [
+    { dx: -0.38, dy:  0.18, dz: 2, baseAngle: -12, szMult: 0.62 }, // front left
+    { dx:  0.35, dy:  0.22, dz: 4, baseAngle:  14, szMult: 0.58 }, // front right
+    { dx: -0.44, dy: -0.22, dz: 1, baseAngle:  -8, szMult: 0.52 }, // back left
+    { dx:  0.40, dy: -0.18, dz: 2, baseAngle:  10, szMult: 0.50 }, // back right
+    { dx:  0.08, dy:  0.30, dz: 6, baseAngle:  -4, szMult: 0.48 }, // front centre
+    { dx: -0.20, dy:  0.35, dz: 3, baseAngle:  18, szMult: 0.44 }, // front-left low
+    { dx:  0.24, dy: -0.35, dz: 1, baseAngle:  -6, szMult: 0.42 }, // back right high
+  ];
+
+  items.slice(1).forEach((item, i) => {
+    const pos = positions[i % positions.length];
+    const sz = heroSz * pos.szMult;
+    item.w = sz;
+    item.h = sz;
+    item.x = cx + W * pos.dx - sz/2;
+    item.y = cy + H * pos.dy - sz/2;
+    item.angle = pos.baseAngle + (Math.random()-0.5) * 8;
+    item.zIndex = pos.dz;
+  });
+
+  // Sort by zIndex so back items mount first (front items drawn on top)
+  items.sort((a,b) => (a.zIndex||0) - (b.zIndex||0));
+}
+
 function mountItem(item) {
   let el=document.getElementById('bi-'+item.id);
   if (!el) {
@@ -1270,6 +1326,7 @@ function mountItem(item) {
     el.innerHTML=`<img src="${item.src}" crossorigin="anonymous"><div class="handle nw" data-h="nw"></div><div class="handle ne" data-h="ne"></div><div class="handle sw" data-h="sw"></div><div class="handle se" data-h="se"></div><div class="handle n" data-h="n"></div><div class="handle s" data-h="s"></div><div class="handle e" data-h="e"></div><div class="handle w" data-h="w"></div><div class="handle rot" data-h="rot"></div>`;
     bc().appendChild(el);
   }
+  if (item.zIndex) el.style.zIndex = item.zIndex;
   applyT(el,item);
 }
 
@@ -1339,14 +1396,11 @@ function onMove(e){
 function onUp(){dragState=null;document.removeEventListener('mousemove',onMove);document.removeEventListener('mouseup',onUp);}
 
 function autoArrange(){
-  const W=bc().offsetWidth;
-  const cols=Math.ceil(Math.sqrt(bundleItems.length));
-  const sz=Math.min(150,W/cols-20);
-  bundleItems.forEach((item,i)=>{
-    item.x=(i%cols)*(sz+16)+20;item.y=Math.floor(i/cols)*(sz+16)+20;
-    item.w=sz;item.h=sz;item.angle=(Math.random()-.5)*16;
-    applyT(document.getElementById('bi-'+item.id),item);
-  });
+  const c=bc(),W=c.offsetWidth,H=c.offsetHeight;
+  heroLayout(bundleItems,W,H);
+  // Re-mount in new z-order
+  c.innerHTML='';
+  bundleItems.forEach(item=>mountItem(item));
   deselectAll();
 }
 
@@ -1367,14 +1421,32 @@ async function exportBundle(){
   const out=document.createElement('canvas');
   out.width=c.offsetWidth*2;out.height=c.offsetHeight*2;
   const ctx=out.getContext('2d');ctx.scale(2,2);
-  for(const el of c.querySelectorAll('.bitem')){
-    const item=getItem(parseInt(el.dataset.id));if(!item)continue;
+
+  // Sort by zIndex for correct layering in export
+  const sorted=[...bundleItems].sort((a,b)=>(a.zIndex||0)-(b.zIndex||0));
+
+  for(const item of sorted){
+    const el=document.getElementById('bi-'+item.id);
+    if(!el)continue;
     const img=el.querySelector('img');
     const cx=item.x+item.w/2,cy=item.y+item.h/2;
     const ang=item.angle*Math.PI/180;
+
+    // Draw soft contact shadow first
+    ctx.save();
+    ctx.translate(cx,cy+item.h*0.46);
+    const sg=ctx.createRadialGradient(0,0,0,0,0,item.w*0.45);
+    sg.addColorStop(0,'rgba(0,0,0,0.22)');
+    sg.addColorStop(1,'rgba(0,0,0,0)');
+    ctx.fillStyle=sg;
+    ctx.scale(1,0.25);
+    ctx.beginPath();ctx.arc(0,0,item.w*0.45,0,Math.PI*2);ctx.fill();
+    ctx.restore();
+
     await new Promise(res=>{
       const i=new Image();i.crossOrigin='anonymous';
       i.onload=()=>{ctx.save();ctx.translate(cx,cy);ctx.rotate(ang);ctx.drawImage(i,-item.w/2,-item.h/2,item.w,item.h);ctx.restore();res();};
+      i.onerror=res;
       i.src=img.src;
     });
   }
