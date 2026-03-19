@@ -315,7 +315,7 @@ https://anysite.com/product/item-two"></textarea>
 
 </div>
   <div style="text-align:center;margin-top:3rem;font-size:10px;font-family:'DM Mono',monospace;color:#333;letter-spacing:.5px;">
-    Extracto v2.7 &mdash; brewed by Jonas for Devote Digital</div>
+    Extracto v2.8 &mdash; brewed by Jonas for Devote Digital</div>
 </div>
 
 <script>
@@ -1303,17 +1303,24 @@ function d3ForceLayout(items, W, H) {
   if (!items.length) return;
   const count = items.length;
 
-  // Detect hero -- use the item whose image has the largest rendered area
-  // Load images to measure natural dimensions, fallback to index 0
+  // Detect hero by counting non-transparent pixels on a small canvas sample
   const heroIdx = (() => {
     let best = 0, bestScore = 0;
     items.forEach((item, i) => {
       const el = document.getElementById('bi-'+item.id);
       const img = el?.querySelector('img');
-      if (img && img.naturalWidth && img.naturalHeight) {
-        const score = img.naturalWidth * img.naturalHeight;
-        if (score > bestScore) { bestScore = score; best = i; }
-      }
+      if (!img || !img.naturalWidth) return;
+      try {
+        // Sample at 40x40 to count non-transparent pixels
+        const sc = document.createElement('canvas');
+        sc.width = 40; sc.height = 40;
+        const sctx = sc.getContext('2d');
+        sctx.drawImage(img, 0, 0, 40, 40);
+        const d = sctx.getImageData(0, 0, 40, 40).data;
+        let opaque = 0;
+        for (let p = 3; p < d.length; p += 4) if (d[p] > 30) opaque++;
+        if (opaque > bestScore) { bestScore = opaque; best = i; }
+      } catch(e) {}
     });
     return best;
   })();
@@ -1721,6 +1728,22 @@ function deselectAll(){
 function canvasDown(e){
   const itemEl=e.target.closest('.bitem');
   if(!itemEl){deselectAll();return;}
+  // Double click sets as hero (re-runs layout with this item as hero)
+  if(e.detail === 2) {
+    const id = parseInt(itemEl.dataset.id);
+    const idx = bundleItems.findIndex(it => it.id === id);
+    if(idx > 0) {
+      // Move to front of array so it becomes hero
+      const [hero] = bundleItems.splice(idx, 1);
+      bundleItems.unshift(hero);
+      const W = bc().offsetWidth, H = bc().offsetHeight;
+      applyArrangement(bundleItems, currentArrangement, W, H);
+      bc().innerHTML = '';
+      bundleItems.forEach(item => mountItem(item));
+      toast('Hero updated — double-click any item to set as hero');
+      return;
+    }
+  }
   const id=parseInt(itemEl.dataset.id);
   const item=getItem(id);if(!item)return;
   selectItem(item);e.preventDefault();e.stopPropagation();
