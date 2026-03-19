@@ -554,14 +554,43 @@ function extractFromHtml(html, url, source) {
 
   if (candidates.length) { log(source,'tag-ok',`Image found via scan for ${labelFromUrl(url)}`); return candidates[0]; }
 
-  // Last resort: look for any asset path pattern in raw HTML (catches ecrotek-style extensionless paths)
-  const assetMatch = html.match(/["'](\/Images\/Assets\/\d+\/\d+\/)[^"']*/i)
-                  || html.match(/["'](\/images\/assets\/\d+\/\d+\/)[^"']*/i)
-                  || html.match(/["'](\/media\/[^"'?]+)[^"']*/i);
-  if (assetMatch?.[1] && origin) {
-    const assetUrl = origin + assetMatch[1];
-    log(source,'tag-ok',`Asset path found for ${labelFromUrl(url)}`);
-    return assetUrl;
+  // Scan <a href> links for image asset paths (ecrotek puts images in href, not src)
+  const hrefMatches = [...html.matchAll(/<a[^>]+href=["']([^"']+)["'][^>]*>/gi)].map(m => m[1]);
+  const hrefImages = hrefMatches.filter(href => {
+    const h = href.toLowerCase();
+    return (h.includes('/images/assets/') || h.includes('/assets/') || h.includes('/media/')) &&
+           !h.includes('download') && !h.includes('.pdf');
+  }).map(href => {
+    if (href.startsWith('/') && origin) return origin + href;
+    if (href.startsWith('http')) return href;
+    return null;
+  }).filter(Boolean);
+
+  // Prefer the largest size — ecrotek uses /10/ for thumb, /11/ for full
+  if (hrefImages.length) {
+    // Sort: prefer higher size numbers in path (larger images)
+    hrefImages.sort((a, b) => {
+      const numA = parseInt(a.match(/\/(\d+)\/$/)?.[1] || '0');
+      const numB = parseInt(b.match(/\/(\d+)\/$/)?.[1] || '0');
+      return numB - numA;
+    });
+    log(source,'tag-ok',`Asset href found for ${labelFromUrl(url)}: ${hrefImages[0]}`);
+    return hrefImages[0];
+  }
+
+  // Last resort: regex scan for asset paths anywhere in HTML
+  const assetMatch = html.match(/href=["'](\/Images\/Assets\/\d+\/(\d+)\/)[^"']*/gi);
+  if (assetMatch && origin) {
+    // Parse all matches and pick highest size number
+    const parsed = assetMatch.map(m => {
+      const path = m.match(/href=["']([^"']+)["']/i)?.[1];
+      const size = parseInt(path?.match(/\/(\d+)\/$/)?.[1] || '0');
+      return { path, size };
+    }).filter(p => p.path).sort((a,b) => b.size - a.size);
+    if (parsed[0]?.path) {
+      log(source,'tag-ok',`Asset path found for ${labelFromUrl(url)}`);
+      return origin + parsed[0].path;
+    }
   }
 
   return null;
