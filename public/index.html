@@ -301,7 +301,7 @@ https://anysite.com/product/item-two"></textarea>
 
 </div>
   <div style="text-align:center;margin-top:3rem;font-size:10px;font-family:'DM Mono',monospace;color:#333;letter-spacing:.5px;">
-    Extracto v2.3 &mdash; brewed by Jonas for Devote Digital</div>
+    Extracto v2.4 &mdash; brewed by Jonas for Devote Digital</div>
 </div>
 
 <script>
@@ -991,8 +991,9 @@ async function runBundle(urls) {
     try {
       const imgUrl = await fetchImageUrl(urls[i]);
       if (imgUrl) {
-        const final = await removeBg(imgUrl);
-        if(final){
+        const bgResult = await removeBg(imgUrl);
+        const final = bgResult?.result ?? bgResult;
+        if(final && typeof final === 'string'){
           bundleItems.push({id:bundleItems.length,src:final,label:labelFromUrl(urls[i]),x:0,y:0,w:120,h:120,angle:0});
           extractedImageUrls.push(final);
         }
@@ -1013,7 +1014,7 @@ async function runStudioPipeline(urls) {
       if (imgUrl) {
         const bgResult = await removeBg(imgUrl);
         const final = bgResult?.result ?? bgResult;
-        if(final){
+        if(final && typeof final === 'string'){
           extractedImageUrls.push(final);
           bundleItems.push({id:bundleItems.length,src:final,label:labelFromUrl(urls[i]),x:0,y:0,w:120,h:120,angle:0});
         }
