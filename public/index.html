@@ -295,7 +295,7 @@ https://anysite.com/product/item-two"></textarea>
 
 </div>
   <div style="text-align:center;margin-top:3rem;font-size:10px;font-family:'DM Mono',monospace;color:#333;letter-spacing:.5px;">
-    Extracto v1.3 &copy; 2026 Jonas for Devote Digital
+    Extracto v1.4 &copy; 2026 Jonas for Devote Digital
   </div>
 </div>
 
@@ -594,6 +594,12 @@ function extractFromHtml(html, url, source) {
 
 // ── Background removal ─────────────────────────────────────────────────────────
 function processImageOnCanvas(img, tol=40) {
+  // Capture raw image first (before BG removal) for slider reprocessing
+  const rawCanvas = document.createElement('canvas');
+  rawCanvas.width = img.width; rawCanvas.height = img.height;
+  rawCanvas.getContext('2d').drawImage(img, 0, 0);
+  const rawData = rawCanvas.toDataURL('image/png');
+
   const c = document.createElement('canvas');
   c.width = img.width; c.height = img.height;
   const ctx = c.getContext('2d');
@@ -613,7 +619,8 @@ function processImageOnCanvas(img, tol=40) {
     if(Math.abs(px[i]-bgR)<tol&&Math.abs(px[i+1]-bgG)<tol&&Math.abs(px[i+2]-bgB)<tol) px[i+3]=0;
   }
   ctx.putImageData(d,0,0);
-  return c.toDataURL('image/png');
+  // Return object with both processed result and raw data
+  return { result: c.toDataURL('image/png'), rawData };
 }
 
 function loadImageCors(src) {
@@ -651,9 +658,9 @@ async function removeBg(imageUrl, tol=40) {
       const blob = await res.blob();
       const objectUrl = URL.createObjectURL(blob);
       const img = await loadImageCors(objectUrl);
-      const result = processImageOnCanvas(img, tol);
+      const out = processImageOnCanvas(img, tol);
       URL.revokeObjectURL(objectUrl);
-      return result;
+      return out;
     }
   } catch(e) { log('bg','tag-fail',`/api/image error: ${e.message}`); }
 
@@ -674,56 +681,91 @@ async function removeBg(imageUrl, tol=40) {
 function createCard(label) {
   const card = document.createElement('div');
   card.className = 'img-card';
-  card.innerHTML = `<div class="checker"></div><div class="cbadge">fetching</div><div class="clbl">${label}</div><div class="card-ov"><button class="ov-btn" onclick="dlImg(this)">Download PNG</button><button class="ov-btn" onclick="cpImg(this)">Copy</button></div>`;
+  const uid = 'tv-' + Math.random().toString(36).slice(2,7);
+  card.dataset.uid = uid;
+  card.innerHTML = `
+    <div class="checker"></div>
+    <div class="cbadge">fetching</div>
+    <div class="clbl">${label}</div>
+    <div class="card-ov">
+      <div style="width:100%;padding:0 12px 6px;display:flex;align-items:center;gap:6px;">
+        <span style="font-size:9px;font-family:'DM Mono',monospace;color:rgba(200,245,58,0.6);white-space:nowrap;">bg</span>
+        <input type="range" min="0" max="100" value="40" step="1"
+          style="flex:1;cursor:pointer;accent-color:#c8f53a;height:3px;"
+          oninput="document.getElementById('${uid}').textContent=this.value"
+          onchange="reprocessCard(this)">
+        <span id="${uid}" style="font-size:9px;font-family:'DM Mono',monospace;color:#c8f53a;min-width:20px;text-align:right;">40</span>
+      </div>
+      <button class="ov-btn" onclick="dlImg(this)">Download PNG</button>
+      <button class="ov-btn" onclick="cpImg(this)">Copy</button>
+    </div>`;
   return card;
 }
 
-function addToleranceSlider(card) {
-  if (card.nextElementSibling?.classList.contains('tol-wrap')) return;
-  const wrap = document.createElement('div');
-  wrap.className = 'tol-wrap';
-  wrap.style.cssText = 'padding:6px 8px 6px;background:var(--surface);border:0.5px solid var(--border2);border-top:none;border-radius:0 0 var(--rad) var(--rad);display:flex;align-items:center;gap:8px;';
-  const valId = 'tv-' + Math.random().toString(36).slice(2,7);
-  wrap.innerHTML = `
-    <span style="font-size:9px;font-family:'DM Mono',monospace;color:var(--muted);white-space:nowrap;">bg tol</span>
-    <input type="range" min="0" max="100" value="40" step="1"
-      style="flex:1;cursor:pointer;accent-color:#c8f53a;"
-      oninput="document.getElementById('${valId}').textContent=this.value"
-      onchange="reprocessCard(this)">
-    <span id="${valId}" style="font-size:9px;font-family:'DM Mono',monospace;color:#c8f53a;min-width:22px;text-align:right;">40</span>`;
-  card.insertAdjacentElement('afterend', wrap);
-}
-
 async function reprocessCard(slider) {
-  const wrap = slider.closest('.tol-wrap');
-  const card = wrap.previousElementSibling;
-  const origUrl = card.dataset.origUrl;
-  if (!origUrl) { console.warn('No origUrl on card', card); return; }
+  const card = slider.closest('.img-card');
+  if (!card) return;
+  const rawData = card.dataset.rawData;
+  if (!rawData) return;
   const tol = parseInt(slider.value);
   const existingImg = card.querySelector('img');
   if (existingImg) existingImg.style.opacity = '0.3';
   try {
-    const final = await removeBg(origUrl, tol);
-    if (final) {
-      if (existingImg) { existingImg.src = final; existingImg.style.opacity = '1'; }
+    const final = await reprocessFromRaw(rawData, tol);
+    if (final && existingImg) {
+      existingImg.src = final;
+      existingImg.style.opacity = '1';
       card.dataset.src = final;
-    } else {
-      if (existingImg) existingImg.style.opacity = '1';
+    } else if (existingImg) {
+      existingImg.style.opacity = '1';
     }
   } catch(e) {
     if (existingImg) existingImg.style.opacity = '1';
-    console.error('reprocessCard error:', e);
   }
 }
-function updateCard(card, imgUrl, state, origUrl) {
+
+// Reprocess from stored raw image data with new tolerance
+async function reprocessFromRaw(dataUrl, tol) {
+  return new Promise(resolve => {
+    const img = new Image();
+    img.onload = () => {
+      try {
+        const c = document.createElement('canvas');
+        c.width = img.width; c.height = img.height;
+        const ctx = c.getContext('2d');
+        ctx.drawImage(img, 0, 0);
+        const d = ctx.getImageData(0, 0, c.width, c.height);
+        const px = d.data, w = c.width, h = c.height;
+        const corners = [
+          [px[0],px[1],px[2]],
+          [px[(w-1)*4],px[(w-1)*4+1],px[(w-1)*4+2]],
+          [px[(h-1)*w*4],px[(h-1)*w*4+1],px[(h-1)*w*4+2]],
+          [px[((h-1)*w+w-1)*4],px[((h-1)*w+w-1)*4+1],px[((h-1)*w+w-1)*4+2]]
+        ];
+        const bgR=Math.round(corners.reduce((a,c)=>a+c[0],0)/4);
+        const bgG=Math.round(corners.reduce((a,c)=>a+c[1],0)/4);
+        const bgB=Math.round(corners.reduce((a,c)=>a+c[2],0)/4);
+        for(let i=0;i<px.length;i+=4){
+          if(Math.abs(px[i]-bgR)<tol&&Math.abs(px[i+1]-bgG)<tol&&Math.abs(px[i+2]-bgB)<tol) px[i+3]=0;
+        }
+        ctx.putImageData(d,0,0);
+        resolve(c.toDataURL('image/png'));
+      } catch(e) { resolve(null); }
+    };
+    img.onerror = () => resolve(null);
+    img.src = dataUrl;
+  });
+}
+
+function updateCard(card, imgUrl, state, rawData) {
   const badge = card.querySelector('.cbadge');
   if (state==='done'&&imgUrl) {
     if(badge)badge.remove();
     const im=document.createElement('img');im.src=imgUrl;
     card.insertBefore(im,card.querySelector('.card-ov'));
     card.dataset.src=imgUrl;
-    if(origUrl) card.dataset.origUrl=origUrl;
-    addToleranceSlider(card);
+    // Store raw (pre-BG-removal) image data for slider reprocessing
+    if(rawData) card.dataset.rawData=rawData;
   } else if(state==='error') {
     if(badge){badge.className='cbadge fail';badge.textContent='failed';}
     const ov=card.querySelector('.card-ov');if(ov)ov.remove();
@@ -771,8 +813,10 @@ async function runExtract(urls) {
       if (imgUrl) {
         log('img','tag-try',`Loading: ${imgUrl.slice(0,80)}`);
         updateCard(card,null,'removing bg');
-        const final = await removeBg(imgUrl);
-        updateCard(card,final,final?'done':'error', imgUrl);
+        const bgResult = await removeBg(imgUrl);
+        const final = bgResult?.result ?? bgResult;
+        const rawData = bgResult?.rawData ?? null;
+        updateCard(card,final,final?'done':'error', rawData);
         if(final){done++;extractedImageUrls.push(final);}
       } else updateCard(card,null,'error');
     } catch(e){updateCard(card,null,'error');}
@@ -809,7 +853,8 @@ async function runStudioPipeline(urls) {
     try {
       const imgUrl = await fetchImageUrl(urls[i]);
       if (imgUrl) {
-        const final = await removeBg(imgUrl);
+        const bgResult = await removeBg(imgUrl);
+        const final = bgResult?.result ?? bgResult;
         if(final){
           extractedImageUrls.push(final);
           bundleItems.push({id:bundleItems.length,src:final,label:labelFromUrl(urls[i]),x:0,y:0,w:120,h:120,angle:0});
