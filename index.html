@@ -658,12 +658,15 @@ async function removeBg(imageUrl) {
   try {
     const img = await loadImageCors(imageUrl);
     return processImageOnCanvas(img);
-  } catch(e) {}
+  } catch(e) { log('bg','tag-try',`Direct load failed: ${e.message}`); }
 
   // Strategy 2: fetch as blob via /api/image, create object URL (most reliable)
   try {
-    const res = await fetch(`/api/image?url=${encodeURIComponent(imageUrl)}`, {signal: AbortSignal.timeout(10000)});
-    if (res.ok && res.headers.get('content-type')?.startsWith('image/')) {
+    const apiUrl = `/api/image?url=${encodeURIComponent(imageUrl)}`;
+    log('bg','tag-try',`Trying /api/image: ${apiUrl.slice(0,60)}`);
+    const res = await fetch(apiUrl, {signal: AbortSignal.timeout(10000)});
+    log('bg', res.ok ? 'tag-ok' : 'tag-fail', `/api/image returned ${res.status} ${res.headers.get('content-type')}`);
+    if (res.ok) {
       const blob = await res.blob();
       const objectUrl = URL.createObjectURL(blob);
       const img = await loadImageCors(objectUrl);
@@ -671,14 +674,16 @@ async function removeBg(imageUrl) {
       URL.revokeObjectURL(objectUrl);
       return result;
     }
-  } catch(e) {}
+  } catch(e) { log('bg','tag-fail',`/api/image error: ${e.message}`); }
 
   // Strategy 3: allorigins raw proxy
   try {
+    log('bg','tag-try','Trying allorigins raw...');
     const img = await loadImageCors(`https://api.allorigins.win/raw?url=${encodeURIComponent(imageUrl)}`);
     return processImageOnCanvas(img);
-  } catch(e) {}
+  } catch(e) { log('bg','tag-fail',`allorigins raw failed: ${e.message}`); }
 
+  log('bg','tag-fail','All removeBg strategies exhausted');
   return null;
 }
 
@@ -741,6 +746,7 @@ async function runExtract(urls) {
     try {
       const imgUrl = await fetchImageUrl(urls[i]);
       if (imgUrl) {
+        log('img','tag-try',`Loading: ${imgUrl.slice(0,80)}`);
         updateCard(card,null,'removing bg');
         const final = await removeBg(imgUrl);
         updateCard(card,final,final?'done':'error');
