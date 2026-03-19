@@ -560,7 +560,51 @@ https://anysite.com/product/item-two"></textarea>
     return await tryShopifyJson(url)
         || await tryOgImage(url)
         || await tryAllorigins(url)
+        || await tryGeminiExtract(url)
         || (logLine('failed','tag-fail',`Could not extract image from ${labelFromUrl(url)}`), null);
+  }
+
+  // Strategy 4: Gemini reads the raw HTML and extracts the image URL directly
+  async function tryGeminiExtract(url) {
+    const key = getGeminiKey();
+    if (!key) return null;
+    try {
+      // Fetch via our proxy first
+      const proxyRes = await fetch(`/api/proxy?url=${encodeURIComponent(url)}`, { signal: AbortSignal.timeout(10000) });
+      if (!proxyRes.ok) return null;
+      const data = await proxyRes.json();
+      const html = data?.html || '';
+      if (!html) return null;
+
+      // Send HTML to Gemini and ask it to find the image URL
+      const res = await fetch(
+        `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${key}`,
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            contents: [{
+              parts: [{
+                text: `Find the main product image URL in this HTML. It could be in an <img src>, og:image meta tag, or any image path. Return ONLY the full URL (starting with http or /). If it starts with /, prepend ${new URL(url).origin}. Return ONLY the URL, nothing else.
+
+HTML:
+${html.slice(0, 12000)}`
+              }]
+            }],
+            generationConfig: { maxOutputTokens: 200 }
+          })
+        }
+      );
+      const result = await res.json();
+      const raw = result.candidates?.[0]?.content?.parts?.[0]?.text?.trim() || '';
+      // Clean up -- sometimes Gemini adds quotes or newlines
+      const clean = raw.replace(/['"\n]/g,'').trim();
+      if (clean.startsWith('http')) {
+        logLine('gemini','tag-ok', `Gemini extracted image for ${labelFromUrl(url)}`);
+        return clean;
+      }
+      return null;
+    } catch(e) { return null; }
   }
 
   // ── Background removal ────────────────────────────────────────────────────
