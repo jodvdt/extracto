@@ -293,7 +293,7 @@ https://anysite.com/product/item-two"></textarea>
 
     <!-- Pre-compose canvas -->
     <div class="bundle-wrap" style="margin-bottom:8px;">
-      <div class="bcanvas" id="studio-bcanvas" style="min-height:420px;" onmousedown="studioCanvasDown(event)" ontouchstart="studioCanvasDown(event)"></div>
+      <div class="bundle-canvas" id="studio-bcanvas" style="min-height:420px;" onmousedown="studioCanvasDown(event)" ontouchstart="studioCanvasDown(event)"></div>
     </div>
     <div style="font-size:10px;font-family:var(--mono);color:var(--muted);text-align:center;margin-bottom:14px;">drag · resize · rotate · double-click to set hero &nbsp;·&nbsp; layout guides AI generation</div>
 
@@ -1058,6 +1058,8 @@ async function runStudioPipeline(urls) {
   document.getElementById('studio-section').classList.remove('hidden');
   document.getElementById('studio-result').classList.add('hidden');
   document.getElementById('studio-loading').classList.add('hidden');
+  // Wait for DOM to paint before measuring canvas dimensions
+  await new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r)));
   await renderStudioCanvas();
   setSt('done',`${extractedImageUrls.length} image${extractedImageUrls.length!==1?'s':''} ready — arrange then hit Generate`);
 }
@@ -1086,7 +1088,8 @@ async function renderStudioCanvas() {
   const canvas = document.getElementById('studio-bcanvas');
   canvas.innerHTML = '';
   studioBundleItems.forEach(item => mountStudioItem(item));
-  const W = canvas.offsetWidth, H = canvas.offsetHeight;
+  const W = canvas.offsetWidth || 700;
+  const H = canvas.offsetHeight || 420;
   const saved = bundleItems, savedHero = manualHeroId;
   bundleItems = studioBundleItems; manualHeroId = studioManualHeroId;
   applyArrangement(studioBundleItems, studioArrangement, W, H);
