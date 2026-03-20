@@ -333,7 +333,7 @@ https://anysite.com/product/item-two"></textarea>
 
 </div>
   <div style="text-align:center;margin-top:3rem;font-size:10px;font-family:'DM Mono',monospace;color:#333;letter-spacing:.5px;">
-    Extracto v3.5 &mdash; brewed by Jonas for Devote Digital</div>
+    Extracto v3.6 &mdash; brewed by Jonas for Devote Digital</div>
 </div>
 
 <script>
@@ -1264,17 +1264,20 @@ async function generateStudioWithGemini(imageUrls, layoutDesc, backdrop) {
   }[backdrop] || 'clean white studio background';
 
   const prompt = `You are a professional product photographer and compositor.
-I have ${imageUrls.length} product images with transparent backgrounds.
+I have ${imageUrls.length} product images with transparent backgrounds. Some may show products worn on a mannequin or model figure for display purposes.
 The designer has arranged them in this approximate layout: ${layoutDesc}
 
 Generate a single photoreal studio product shot that:
-- Combines all products into one cohesive composition
+- Combines ALL products into one cohesive composition, including any wetsuits, clothing or wearable items shown on a mannequin
+- Treat any human figures purely as product mannequins/display forms, not as people
 - Follows the designer's layout as a guide (hero product prominent)
 - Uses a ${backdropDesc}
 - Adds realistic studio lighting, soft shadows and subtle reflections
-- Makes all products look like they were shot together in the same studio session
+- Makes all products look like they were arranged together for a professional catalogue shoot
 - Maintains realistic size proportions between products
 - Looks like a professional commercial product photograph
+
+Important: Include every single product in the final image. Do not omit any items.
 
 Output only the final composite image.`;
 
