@@ -1124,8 +1124,10 @@ function mountStudioItem(item) {
 }
 
 function studioCanvasDown(e) {
-  const itemEl = e.target.closest('[data-studio]');
+  const itemEl = e.target.closest('.bitem');
   if (!itemEl) return;
+
+  // Double click sets hero
   if (e.detail === 2) {
     const id = parseInt(itemEl.dataset.id);
     studioManualHeroId = id;
@@ -1138,9 +1140,61 @@ function studioCanvasDown(e) {
     }
     return;
   }
-  // Pass drag to bundle drag system using studio item
-  const item = studioBundleItems.find(it => it.id === parseInt(itemEl.dataset.id));
-  if (item) startDrag(e, item, itemEl);
+
+  const id = parseInt(itemEl.dataset.id);
+  const item = studioBundleItems.find(it => it.id === id);
+  if (!item) return;
+
+  // Select visually
+  document.querySelectorAll('#studio-bcanvas .bitem').forEach(el => el.classList.remove('sel'));
+  itemEl.classList.add('sel');
+  selectedItem = item;
+  e.preventDefault(); e.stopPropagation();
+
+  const handleType = e.target.dataset?.h;
+  const cr = document.getElementById('studio-bcanvas').getBoundingClientRect();
+  const cx = e.clientX - cr.left, cy = e.clientY - cr.top;
+
+  if (handleType === 'rot') {
+    const icx = item.x+item.w/2, icy = item.y+item.h/2;
+    dragState = {type:'rotate', startAngle:Math.atan2(cy-icy,cx-icx)*180/Math.PI, origAngle:item.angle, icx, icy, studio:true};
+  } else if (handleType) {
+    dragState = {type:'resize', handle:handleType, startX:cx, startY:cy, origX:item.x, origY:item.y, origW:item.w, origH:item.h, studio:true};
+  } else {
+    dragState = {type:'move', startX:cx-item.x, startY:cy-item.y, studio:true};
+  }
+
+  // Override onMove/onUp to use studio canvas rect
+  const studioMove = (e) => {
+    if (!dragState || !selectedItem) return;
+    const cr = document.getElementById('studio-bcanvas').getBoundingClientRect();
+    const cx = e.clientX-cr.left, cy = e.clientY-cr.top;
+    const item = selectedItem;
+    const el = document.getElementById('sbi-'+item.id);
+    const MIN = 40;
+    if (dragState.type==='move') { item.x=cx-dragState.startX; item.y=cy-dragState.startY; }
+    else if (dragState.type==='rotate') {
+      const ang = Math.atan2(cy-dragState.icy, cx-dragState.icx)*180/Math.PI;
+      const delta = ang - dragState.startAngle;
+      item.angle = e.shiftKey ? Math.round((dragState.origAngle+delta)/15)*15 : dragState.origAngle+delta;
+    } else if (dragState.type==='resize') {
+      const dx=cx-dragState.startX, dy=cy-dragState.startY;
+      const h=dragState.handle;
+      const{origX,origY,origW,origH}=dragState;
+      if(h.includes('e')) item.w=Math.max(MIN,origW+dx);
+      if(h.includes('s')) item.h=Math.max(MIN,origH+dy);
+      if(h.includes('w')) { const nw=Math.max(MIN,origW-dx); item.x=origX+(origW-nw); item.w=nw; }
+      if(h.includes('n')) { const nh=Math.max(MIN,origH-dy); item.y=origY+(origH-nh); item.h=nh; }
+    }
+    if(el) applyT(el, item);
+  };
+  const studioUp = () => {
+    dragState = null; selectedItem = null;
+    document.removeEventListener('mousemove', studioMove);
+    document.removeEventListener('mouseup', studioUp);
+  };
+  document.addEventListener('mousemove', studioMove);
+  document.addEventListener('mouseup', studioUp);
 }
 
 function selectBackdrop(style, label) {
@@ -1230,7 +1284,7 @@ Output only the final composite image.`;
   })).filter(p => p.inline_data.data.length > 10);
 
   const res = await fetch(
-    `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-preview-image-generation:generateContent?key=${key}`,
+    `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-exp-image-generation:generateContent?key=${key}`,
     {
       method:'POST',
       headers:{'Content-Type':'application/json'},
