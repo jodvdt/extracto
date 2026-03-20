@@ -1086,8 +1086,11 @@ function changeStudioArrangement() {
 
 async function renderStudioCanvas() {
   const canvas = document.getElementById('studio-bcanvas');
+  console.log('[studio] renderStudioCanvas called, items:', studioBundleItems.length);
+  console.log('[studio] canvas el:', canvas, 'W:', canvas?.offsetWidth, 'H:', canvas?.offsetHeight);
   canvas.innerHTML = '';
   studioBundleItems.forEach(item => mountStudioItem(item));
+  console.log('[studio] mounted items, children:', canvas.children.length);
   const W = canvas.offsetWidth || 700;
   const H = canvas.offsetHeight || 420;
   const saved = bundleItems, savedHero = manualHeroId;
@@ -1095,6 +1098,7 @@ async function renderStudioCanvas() {
   applyArrangement(studioBundleItems, studioArrangement, W, H);
   bundleItems = saved; manualHeroId = savedHero;
   studioBundleItems.forEach(item => {
+    console.log('[studio] item', item.id, 'pos:', item.x, item.y, 'size:', item.w, item.h);
     const el = document.getElementById('sbi-'+item.id);
     if(el){ applyT(el,item); if(item.zIndex) el.style.zIndex=item.zIndex; }
   });
