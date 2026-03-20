@@ -333,7 +333,7 @@ https://anysite.com/product/item-two"></textarea>
 
 </div>
   <div style="text-align:center;margin-top:3rem;font-size:10px;font-family:'DM Mono',monospace;color:#333;letter-spacing:.5px;">
-    Extracto v3.4 &mdash; brewed by Jonas for Devote Digital</div>
+    Extracto v3.5 &mdash; brewed by Jonas for Devote Digital</div>
 </div>
 
 <script>
@@ -1300,7 +1300,7 @@ Output only the final composite image.`;
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           contents: [{ parts: [...imageParts, { text: prompt }] }],
-          generationConfig: { responseModalities: ['IMAGE', 'TEXT'] }
+          generation_config: { response_modalities: ['IMAGE', 'TEXT'] }
         })
       });
 
@@ -1312,14 +1312,19 @@ Output only the final composite image.`;
         continue;
       }
 
-      const imgPart = data.candidates?.[0]?.content?.parts?.find(p => p.inline_data?.mime_type?.startsWith('image/'));
+      const imgPart = data.candidates?.[0]?.content?.parts?.find(p => 
+        p.inline_data?.mime_type?.startsWith('image/') ||
+        p.inlineData?.mimeType?.startsWith('image/')
+      );
       if (!imgPart) {
         lastErr = new Error('No image in response — ' + JSON.stringify(data).slice(0,200));
         log('studio','tag-fail',`No image part: ${JSON.stringify(data).slice(0,100)}`);
         continue;
       }
 
-      return `data:${imgPart.inline_data.mime_type};base64,${imgPart.inline_data.data}`;
+      // Handle both snake_case and camelCase response formats
+      const imgData = imgPart.inline_data || imgPart.inlineData;
+      return `data:${imgData.mime_type || imgData.mimeType};base64,${imgData.data}`;
     } catch(e) {
       lastErr = e;
       log('studio','tag-fail',`Request failed: ${e.message}`);
