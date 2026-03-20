@@ -333,7 +333,7 @@ https://anysite.com/product/item-two"></textarea>
 
 </div>
   <div style="text-align:center;margin-top:3rem;font-size:10px;font-family:'DM Mono',monospace;color:#333;letter-spacing:.5px;">
-    Extracto v3.6 &mdash; brewed by Jonas for Devote Digital</div>
+    Extracto v3.7 &mdash; brewed by Jonas for Devote Digital</div>
 </div>
 
 <script>
@@ -1263,77 +1263,120 @@ async function generateStudioWithGemini(imageUrls, layoutDesc, backdrop) {
     gradient:'soft cool blue-grey gradient studio background',
   }[backdrop] || 'clean white studio background';
 
+  // Export studio canvas as a reference thumbnail
+  const canvasThumb = await exportStudioCanvasThumb();
+
   const prompt = `You are a professional product photographer and compositor.
-I have ${imageUrls.length} product images with transparent backgrounds. Some may show products worn on a mannequin or model figure for display purposes.
-The designer has arranged them in this approximate layout: ${layoutDesc}
 
-Generate a single photoreal studio product shot that:
-- Combines ALL products into one cohesive composition, including any wetsuits, clothing or wearable items shown on a mannequin
-- Treat any human figures purely as product mannequins/display forms, not as people
-- Follows the designer's layout as a guide (hero product prominent)
-- Uses a ${backdropDesc}
-- Adds realistic studio lighting, soft shadows and subtle reflections
-- Makes all products look like they were arranged together for a professional catalogue shoot
-- Maintains realistic size proportions between products
-- Looks like a professional commercial product photograph
+I am providing you with:
+1. A layout reference image showing how the designer wants the products arranged (the first image)
+2. Individual product cutout images with transparent backgrounds (the remaining images)
 
-Important: Include every single product in the final image. Do not omit any items.
+Your task:
+- Generate a single photoreal studio product shot
+- Follow the layout reference image CLOSELY -- match the position, size and arrangement of each product as shown
+- Treat any human figures purely as mannequins/product display forms, not as people
+- Use a ${backdropDesc}
+- Add realistic studio lighting, soft shadows and subtle reflections  
+- Make all products look like they were arranged together for a professional catalogue shoot
+- Include EVERY product shown in the layout reference -- do not omit any items
+- Output looks like a professional commercial product photograph
 
 Output only the final composite image.`;
 
-  // Convert dataURLs to base64 parts
-  const imageParts = imageUrls.map(url => ({
-    inline_data: {
-      mime_type: 'image/png',
-      data: url.replace(/^data:image\/\w+;base64,/, '')
-    }
-  })).filter(p => p.inline_data.data.length > 10);
+  // Build parts: layout thumbnail first, then individual product cutouts
+  const parts = [];
 
-  // Try v1beta first, fallback to v1
-  const endpoints = [
-    `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-image:generateContent?key=${key}`,
-    `https://generativelanguage.googleapis.com/v1/models/gemini-2.5-flash-image:generateContent?key=${key}`,
-  ];
-
-  let lastErr = null;
-  for (const endpoint of endpoints) {
-    try {
-      const res = await fetch(endpoint, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          contents: [{ parts: [...imageParts, { text: prompt }] }],
-          generation_config: { response_modalities: ['IMAGE', 'TEXT'] }
-        })
-      });
-
-      const data = await res.json();
-
-      if (!res.ok) {
-        lastErr = new Error(data.error?.message || `API error ${res.status}`);
-        log('studio','tag-fail',`${endpoint.includes('v1beta')?'v1beta':'v1'}: ${lastErr.message}`);
-        continue;
-      }
-
-      const imgPart = data.candidates?.[0]?.content?.parts?.find(p => 
-        p.inline_data?.mime_type?.startsWith('image/') ||
-        p.inlineData?.mimeType?.startsWith('image/')
-      );
-      if (!imgPart) {
-        lastErr = new Error('No image in response — ' + JSON.stringify(data).slice(0,200));
-        log('studio','tag-fail',`No image part: ${JSON.stringify(data).slice(0,100)}`);
-        continue;
-      }
-
-      // Handle both snake_case and camelCase response formats
-      const imgData = imgPart.inline_data || imgPart.inlineData;
-      return `data:${imgData.mime_type || imgData.mimeType};base64,${imgData.data}`;
-    } catch(e) {
-      lastErr = e;
-      log('studio','tag-fail',`Request failed: ${e.message}`);
-    }
+  if (canvasThumb) {
+    parts.push({
+      inline_data: { mime_type: 'image/jpeg', data: canvasThumb }
+    });
   }
-  throw lastErr || new Error('All endpoints failed');
+
+  imageUrls.forEach(url => {
+    const data = url.replace(/^data:image\/\w+;base64,/, '');
+    if (data.length > 10) {
+      parts.push({ inline_data: { mime_type: 'image/png', data } });
+    }
+  });
+
+  parts.push({ text: prompt });
+
+  // Try v1beta
+  const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-image:generateContent?key=${key}`;
+
+  const res = await fetch(endpoint, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      contents: [{ parts }],
+      generation_config: { response_modalities: ['IMAGE', 'TEXT'] }
+    })
+  });
+
+  const data = await res.json();
+
+  if (!res.ok) {
+    throw new Error(data.error?.message || `API error ${res.status}`);
+  }
+
+  const imgPart = data.candidates?.[0]?.content?.parts?.find(p =>
+    p.inline_data?.mime_type?.startsWith('image/') ||
+    p.inlineData?.mimeType?.startsWith('image/')
+  );
+
+  if (!imgPart) {
+    log('studio','tag-fail',`No image part: ${JSON.stringify(data).slice(0,200)}`);
+    throw new Error('No image returned from Gemini');
+  }
+
+  const imgData = imgPart.inline_data || imgPart.inlineData;
+  return `data:${imgData.mime_type || imgData.mimeType};base64,${imgData.data}`;
+}
+
+// Export the studio canvas as a small JPEG thumbnail for Gemini reference
+async function exportStudioCanvasThumb() {
+  try {
+    const canvas = document.getElementById('studio-bcanvas');
+    const W = canvas.offsetWidth, H = canvas.offsetHeight;
+    if (!W || !H || !studioBundleItems.length) return null;
+
+    const out = document.createElement('canvas');
+    out.width = W; out.height = H;
+    const ctx = out.getContext('2d');
+
+    // White background so layout is clear
+    ctx.fillStyle = '#ffffff';
+    ctx.fillRect(0, 0, W, H);
+
+    // Draw each item in z-order
+    const sorted = [...studioBundleItems].sort((a,b) => (a.zIndex||0) - (b.zIndex||0));
+    for (const item of sorted) {
+      const el = document.getElementById('sbi-'+item.id);
+      const img = el?.querySelector('img');
+      if (!img) continue;
+      await new Promise(res => {
+        const i = new Image();
+        i.crossOrigin = 'anonymous';
+        i.onload = () => {
+          ctx.save();
+          ctx.translate(item.x + item.w/2, item.y + item.h/2);
+          ctx.rotate(item.angle * Math.PI / 180);
+          ctx.drawImage(i, -item.w/2, -item.h/2, item.w, item.h);
+          ctx.restore();
+          res();
+        };
+        i.onerror = res;
+        i.src = img.src;
+      });
+    }
+
+    // Return as JPEG base64 (smaller than PNG)
+    return out.toDataURL('image/jpeg', 0.85).replace(/^data:image\/jpeg;base64,/, '');
+  } catch(e) {
+    console.warn('Canvas thumb export failed:', e);
+    return null;
+  }
 }
 
 function dlStudio() {
