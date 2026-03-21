@@ -268,22 +268,40 @@ hr{border:none;border-top:0.5px solid var(--border);margin:1.5rem 0;}
 
   <!-- Settings -->
   <div class="settings-panel hidden" id="settings-panel">
-    <div class="settings-row">
-      <span class="settings-lbl">Gemini API key</span>
-      <input type="password" class="settings-input" id="gemini-key-input" placeholder="AIzaSy..." autocomplete="off">
-      <button class="save-btn" onclick="saveKeys()">Save</button>
-    </div>
-    <div class="settings-row" style="margin-top:8px;">
+    <div class="settings-row" style="margin-bottom:12px;">
       <span class="settings-lbl">Verbose log</span>
       <div style="display:flex;align-items:center;gap:8px;flex:1;">
         <button id="verbose-toggle" onclick="toggleVerbose()" style="height:28px;padding:0 12px;background:var(--surface2);border:0.5px solid var(--border2);border-radius:6px;color:var(--muted);font-family:var(--mono);font-size:10px;cursor:pointer;transition:all .15s;letter-spacing:.3px;">OFF</button>
         <span style="font-size:10px;font-family:var(--mono);color:var(--muted2);">show detailed extraction log</span>
       </div>
     </div>
-    <div class="settings-note">API key saved to your browser only. Used for Studio Shoot image generation (~$0.04/generation) and smart layout detection.</div>
+    <div style="border-top:0.5px solid var(--border);padding-top:12px;margin-bottom:12px;">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
+        <span class="settings-lbl" style="margin:0;">Gemini API key</span>
+        <div style="display:flex;align-items:center;gap:8px;">
+          <span style="font-size:10px;font-family:var(--mono);color:var(--muted2);" id="api-mode-lbl">Using default key</span>
+          <button id="api-key-toggle" onclick="toggleApiKeyMode()"
+            style="height:24px;padding:0 10px;background:var(--surface2);border:0.5px solid var(--border2);border-radius:5px;color:var(--muted);font-family:var(--mono);font-size:9px;cursor:pointer;transition:all .15s;letter-spacing:.3px;">
+            USE CUSTOM
+          </button>
+        </div>
+      </div>
+      <div id="custom-key-row" style="display:none;gap:8px;align-items:center;">
+        <div style="position:relative;flex:1;">
+          <input type="password" class="settings-input" id="gemini-key-input" placeholder="AIzaSy..." autocomplete="off" style="width:100%;padding-right:36px;">
+          <span style="position:absolute;right:10px;top:50%;transform:translateY(-50%);font-size:9px;font-family:var(--mono);color:var(--muted);cursor:pointer;" onclick="toggleKeyVisibility()" id="key-vis-btn">show</span>
+        </div>
+        <button class="save-btn" onclick="saveKeys()">Save</button>
+      </div>
+      <div id="custom-key-note" style="display:none;margin-top:6px;font-size:10px;font-family:var(--mono);color:var(--muted2);line-height:1.5;">
+        Must be a paid Gemini API key with image generation enabled.
+        <a href="https://aistudio.google.com" target="_blank" style="color:var(--accent);text-decoration:none;">Get one →</a>
+      </div>
+    </div>
+    <div class="settings-note">Studio Shoot uses AI image generation (~$0.04/generation). Powered by Gemini 2.5 Flash.</div>
     <div style="margin-top:10px;display:flex;justify-content:space-between;align-items:center;">
       <span style="font-size:10px;font-family:var(--mono);color:var(--muted2);">version</span>
-      <span style="font-size:10px;font-family:var(--mono);color:var(--muted);">v4.00</span>
+      <span style="font-size:10px;font-family:var(--mono);color:var(--muted);">v4.01</span>
     </div>
   </div>
 
@@ -393,10 +411,9 @@ https://anysite.com/product/item-two"></textarea>
 
     <!-- Generate button -->
     <button class="studio-generate-btn" id="studio-btn" onclick="runStudioShoot()">
-      <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M7 1L8.5 5.5H13L9.5 8.5L11 13L7 10L3 13L4.5 8.5L1 5.5H5.5L7 1Z" fill="#0b0b0b"/></svg>
+      <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M7 1L8.5 5.5H13L9.5 8.5L11 13L7 10L3 13L4.5 8.5L1 5.5H5.5L7 1Z" fill="#fff"/></svg>
       Generate Studio Shoot
     </button>
-    <div style="font-size:9px;font-family:var(--mono);color:var(--muted);text-align:center;margin-top:6px;margin-bottom:4px;">requires paid Gemini API key with image generation enabled</div>
 
     <!-- Loading -->
     <div class="studio-loading hidden" id="studio-loading">
@@ -441,12 +458,48 @@ function toggleSettings() {
   const p = document.getElementById('settings-panel');
   p.classList.toggle('hidden');
   if (!p.classList.contains('hidden')) {
-    const k = getKey();
-    if (k) document.getElementById('gemini-key-input').value = k;
-    // Sync verbose toggle state
     const vb = document.getElementById('verbose-toggle');
     if(vb){ vb.textContent = debugMode ? 'ON' : 'OFF'; vb.style.background = debugMode ? 'var(--accent)' : 'var(--surface2)'; vb.style.color = debugMode ? '#fff' : 'var(--muted)'; vb.style.borderColor = debugMode ? 'transparent' : 'var(--border2)'; }
+    // Restore saved key if custom mode was on
+    const k = getKey();
+    if (k && usingCustomKey) document.getElementById('gemini-key-input').value = k;
   }
+}
+
+let usingCustomKey = false;
+
+function toggleApiKeyMode() {
+  usingCustomKey = !usingCustomKey;
+  const btn = document.getElementById('api-key-toggle');
+  const lbl = document.getElementById('api-mode-lbl');
+  const row = document.getElementById('custom-key-row');
+  const note = document.getElementById('custom-key-note');
+  if (usingCustomKey) {
+    btn.textContent = 'USE DEFAULT';
+    btn.style.background = 'var(--accent)';
+    btn.style.color = '#fff';
+    btn.style.borderColor = 'transparent';
+    lbl.textContent = 'Using custom key';
+    row.style.display = 'flex';
+    note.style.display = 'block';
+    const k = getKey();
+    if (k) document.getElementById('gemini-key-input').value = k;
+  } else {
+    btn.textContent = 'USE CUSTOM';
+    btn.style.background = 'var(--surface2)';
+    btn.style.color = 'var(--muted)';
+    btn.style.borderColor = 'var(--border2)';
+    lbl.textContent = 'Using default key';
+    row.style.display = 'none';
+    note.style.display = 'none';
+  }
+}
+
+function toggleKeyVisibility() {
+  const inp = document.getElementById('gemini-key-input');
+  const btn = document.getElementById('key-vis-btn');
+  if (inp.type === 'password') { inp.type = 'text'; btn.textContent = 'hide'; }
+  else { inp.type = 'password'; btn.textContent = 'show'; }
 }
 
 function toggleVerbose() {
@@ -740,17 +793,17 @@ async function s4_gemini(url) {
       ? `Find the main product image URL in this HTML from ${url}. Look for og:image meta tags, large img src attributes, or asset paths. Return ONLY the full absolute URL. If it starts with /, prepend ${origin}. No explanation.\n\nHTML:\n${html.slice(0,14000)}`
       : `What is the main product image URL on this page: ${url}\nReturn ONLY the full absolute image URL. No explanation.`;
 
-    const res = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${key}`,
-      {
-        method:'POST',
-        headers:{'Content-Type':'application/json'},
-        body:JSON.stringify({
+    const res = await fetch('/api/gemini', {
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({
+        model:'gemini-2.0-flash',
+        body:{
           contents:[{parts:[{text:prompt}]}],
           generationConfig:{maxOutputTokens:200}
-        })
-      }
-    );
+        }
+      })
+    });
     const result = await res.json();
     if (result.error) throw new Error(result.error.message);
     const raw = result.candidates?.[0]?.content?.parts?.[0]?.text?.trim() || '';
@@ -1372,8 +1425,6 @@ function getLayoutDescription() {
 // ── Studio Shoot ───────────────────────────────────────────────────────────────
 async function runStudioShoot() {
   if (!extractedImageUrls.length) { toast("No product images — run Let's go first"); return; }
-  const key = getKey();
-  if (!key) { toast('Add your Gemini API key in Settings ⚙️'); return; }
 
   const btn = document.getElementById('studio-btn');
   btn.disabled = true;
@@ -1408,7 +1459,6 @@ async function runStudioShoot() {
 }
 
 async function generateStudioWithGemini(imageUrls, layoutDesc, backdrop) {
-  const key = getKey();
   const backdropDesc = {
     white:'clean seamless white studio background with soft floor sweep',
     warm:'warm cream and sand toned studio background',
@@ -1455,17 +1505,37 @@ Output only the final composite image.`;
 
   parts.push({ text: prompt });
 
-  // Try v1beta
-  const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-image:generateContent?key=${key}`;
-
-  const res = await fetch(endpoint, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      contents: [{ parts }],
-      generation_config: { response_modalities: ['IMAGE', 'TEXT'] }
-    })
-  });
+  // Route based on API key mode
+  // Custom key: call Gemini directly from browser
+  // Default key: route through server proxy (key hidden in Vercel env)
+  let res;
+  if (usingCustomKey) {
+    const key = getKey();
+    if (!key) throw new Error('No custom API key set — add one in Settings ⚙️');
+    res = await fetch(
+      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-image:generateContent?key=${key}`,
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          contents: [{ parts }],
+          generation_config: { response_modalities: ['IMAGE', 'TEXT'] }
+        })
+      }
+    );
+  } else {
+    res = await fetch('/api/gemini', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        model: 'gemini-2.5-flash-image',
+        body: {
+          contents: [{ parts }],
+          generation_config: { response_modalities: ['IMAGE', 'TEXT'] }
+        }
+      })
+    });
+  }
 
   const data = await res.json();
 
@@ -1631,23 +1701,21 @@ async function renderStudio(urls, style) {
 
 // ── Image classifier ───────────────────────────────────────────────────────────
 async function classifyImage(dataUrl) {
-  const key = getKey();
-  if (!key) return 'packshot';
   try {
-    const res = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${key}`,
-      {
-        method:'POST',
-        headers:{'Content-Type':'application/json'},
-        body:JSON.stringify({
+    const res = await fetch('/api/gemini', {
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({
+        model:'gemini-2.0-flash',
+        body:{
           contents:[{parts:[
             {inline_data:{mime_type:'image/png',data:dataUrl.split(',')[1]}},
             {text:'Classify this product image. Reply with ONLY one word: model_fullbody, model_halfbody, flatlay, packshot, or lifestyle'}
           ]}],
           generationConfig:{maxOutputTokens:10}
-        })
-      }
-    );
+        }
+      })
+    });
     const d = await res.json();
     const raw = d.candidates?.[0]?.content?.parts?.[0]?.text?.trim().toLowerCase()||'packshot';
     const valid=['model_fullbody','model_halfbody','flatlay','packshot','lifestyle'];
