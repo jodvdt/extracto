@@ -95,6 +95,7 @@ select{width:100%;height:44px;background:var(--surface2);border:0.5px solid var(
 .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(155px,1fr));gap:10px;margin-bottom:1.5rem;}
 .img-card{background:var(--surface);border:0.5px solid var(--border2);border-radius:var(--rad);aspect-ratio:1;position:relative;overflow:hidden;display:flex;align-items:center;justify-content:center;transition:border-color .15s;}
 .img-card:hover{border-color:var(--accent-border);}
+.img-card-wrap{display:flex;flex-direction:column;}
 .checker{position:absolute;inset:0;background-image:linear-gradient(45deg,#222 25%,transparent 25%),linear-gradient(-45deg,#222 25%,transparent 25%),linear-gradient(45deg,transparent 75%,#222 75%),linear-gradient(-45deg,transparent 75%,#222 75%);background-size:14px 14px;background-position:0 0,0 7px,7px -7px,-7px 0;opacity:.6;}
 .img-card img{position:relative;z-index:2;max-width:86%;max-height:86%;object-fit:contain;display:block;}
 .card-ov{position:absolute;inset:0;background:rgba(11,11,11,.86);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:7px;opacity:0;transition:opacity .15s;z-index:3;}
@@ -884,34 +885,49 @@ function createCard(label) {
         onmouseup="reprocessCard(this)"
         ontouchend="reprocessCard(this)">
       <span id="${uid}" style="font-size:9px;font-family:'DM Mono',monospace;color:#c8f53a;min-width:20px;text-align:right;">40</span>
+    </div>
+    <div class="pname-wrap" style="display:none;align-items:center;gap:6px;padding:6px 8px;background:var(--surface);border-top:0.5px solid var(--border2);">
+      <input id="${nid}" type="text" value=""
+        style="flex:1;height:26px;background:var(--surface2);border:0.5px solid var(--border2);border-radius:5px;padding:0 8px;color:var(--text);font-family:var(--mono);font-size:10px;outline:none;min-width:0;"
+        onclick="this.select()" onfocus="this.select()">
+      <button onclick="cpName('${nid}')" title="Copy name"
+        style="height:26px;width:26px;flex-shrink:0;background:var(--surface2);border:0.5px solid var(--border2);border-radius:5px;cursor:pointer;display:flex;align-items:center;justify-content:center;color:var(--muted);transition:all .15s;"
+        onmouseover="this.style.borderColor='var(--accent)';this.style.color='var(--accent)'"
+        onmouseout="this.style.borderColor='var(--border2)';this.style.color='var(--muted)'">
+        <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><rect x="4" y="4" width="7" height="7" rx="1" stroke="currentColor" stroke-width="1.2"/><path d="M1 8V2a1 1 0 011-1h6" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/></svg>
+      </button>
     </div>`;
   return card;
 }
 
 function addNameField(card, productName) {
-  const nid = card.dataset.nid;
-  // Clean up the name -- title case, remove dashes/underscores
   const cleaned = productName
     .replace(/[-_]/g, ' ')
     .replace(/\.[^.]+$/, '')
     .replace(/\b\w/g, c => c.toUpperCase())
     .trim();
 
-  const wrap = document.createElement('div');
-  wrap.className = 'pname-wrap';
-  wrap.style.cssText = 'display:flex;align-items:center;gap:6px;margin-top:6px;';
-  wrap.innerHTML = `
+  // Find or use the wrapper
+  const wrapper = card.closest('.img-card-wrap') || card.parentElement;
+  const nid = card.dataset.nid;
+
+  const nameRow = document.createElement('div');
+  nameRow.style.cssText = 'display:flex;align-items:center;gap:6px;padding:5px 0 0;';
+  nameRow.innerHTML = `
     <input id="${nid}" type="text" value="${cleaned}"
-      style="flex:1;height:28px;background:var(--surface2);border:0.5px solid var(--border2);border-radius:6px;padding:0 8px;color:var(--text);font-family:var(--mono);font-size:10px;outline:none;min-width:0;"
-      onclick="this.select()"
-      onfocus="this.select()">
+      style="flex:1;height:27px;background:var(--surface2);border:0.5px solid var(--border2);border-radius:6px;padding:0 8px;color:var(--text);font-family:var(--mono);font-size:10px;outline:none;min-width:0;"
+      onclick="this.select()" onfocus="this.select()">
     <button onclick="cpName('${nid}')" title="Copy name"
-      style="height:28px;width:28px;flex-shrink:0;background:var(--surface2);border:0.5px solid var(--border2);border-radius:6px;cursor:pointer;display:flex;align-items:center;justify-content:center;color:var(--muted);transition:all .15s;"
+      style="height:27px;width:27px;flex-shrink:0;background:var(--surface2);border:0.5px solid var(--border2);border-radius:6px;cursor:pointer;display:flex;align-items:center;justify-content:center;color:var(--muted);transition:all .15s;"
       onmouseover="this.style.borderColor='var(--accent)';this.style.color='var(--accent)'"
       onmouseout="this.style.borderColor='var(--border2)';this.style.color='var(--muted)'">
       <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><rect x="4" y="4" width="7" height="7" rx="1" stroke="currentColor" stroke-width="1.2"/><path d="M1 8V2a1 1 0 011-1h6" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/></svg>
     </button>`;
-  card.insertAdjacentElement('afterend', wrap);
+  wrapper.appendChild(nameRow);
+
+  // Hide the built-in pname-wrap since we're using the external one
+  const builtIn = card.querySelector('.pname-wrap');
+  if (builtIn) builtIn.remove();
 }
 
 function cpName(nid) {
@@ -1028,7 +1044,10 @@ async function runExtract(urls) {
     setSt('loading',`Processing ${i+1} of ${urls.length}...`);
     logSection(urls[i]);
     const card = createCard(labelFromUrl(urls[i]));
-    grid.appendChild(card);
+    const wrap = document.createElement('div');
+    wrap.className = 'img-card-wrap';
+    wrap.appendChild(card);
+    grid.appendChild(wrap);
     let succeeded = false;
     let finalImgUrl = null;
     try {
