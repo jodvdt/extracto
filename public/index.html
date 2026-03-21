@@ -333,7 +333,7 @@ https://anysite.com/product/item-two"></textarea>
 
 </div>
   <div style="text-align:center;margin-top:3rem;font-size:10px;font-family:'DM Mono',monospace;color:#333;letter-spacing:.5px;">
-    Extracto v3.7 &mdash; brewed by Jonas for Devote Digital</div>
+    Extracto v3.8 &mdash; brewed by Jonas for Devote Digital</div>
 </div>
 
 <script>
@@ -865,7 +865,9 @@ function createCard(label) {
   const card = document.createElement('div');
   card.className = 'img-card';
   const uid = 'tv-' + Math.random().toString(36).slice(2,7);
+  const nid = 'pn-' + Math.random().toString(36).slice(2,7);
   card.dataset.uid = uid;
+  card.dataset.nid = nid;
   card.innerHTML = `
     <div class="checker"></div>
     <div class="cbadge">fetching</div>
@@ -884,6 +886,38 @@ function createCard(label) {
       <span id="${uid}" style="font-size:9px;font-family:'DM Mono',monospace;color:#c8f53a;min-width:20px;text-align:right;">40</span>
     </div>`;
   return card;
+}
+
+function addNameField(card, productName) {
+  const nid = card.dataset.nid;
+  // Clean up the name -- title case, remove dashes/underscores
+  const cleaned = productName
+    .replace(/[-_]/g, ' ')
+    .replace(/\.[^.]+$/, '')
+    .replace(/\b\w/g, c => c.toUpperCase())
+    .trim();
+
+  const wrap = document.createElement('div');
+  wrap.className = 'pname-wrap';
+  wrap.style.cssText = 'display:flex;align-items:center;gap:6px;margin-top:6px;';
+  wrap.innerHTML = `
+    <input id="${nid}" type="text" value="${cleaned}"
+      style="flex:1;height:28px;background:var(--surface2);border:0.5px solid var(--border2);border-radius:6px;padding:0 8px;color:var(--text);font-family:var(--mono);font-size:10px;outline:none;min-width:0;"
+      onclick="this.select()"
+      onfocus="this.select()">
+    <button onclick="cpName('${nid}')" title="Copy name"
+      style="height:28px;width:28px;flex-shrink:0;background:var(--surface2);border:0.5px solid var(--border2);border-radius:6px;cursor:pointer;display:flex;align-items:center;justify-content:center;color:var(--muted);transition:all .15s;"
+      onmouseover="this.style.borderColor='var(--accent)';this.style.color='var(--accent)'"
+      onmouseout="this.style.borderColor='var(--border2)';this.style.color='var(--muted)'">
+      <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><rect x="4" y="4" width="7" height="7" rx="1" stroke="currentColor" stroke-width="1.2"/><path d="M1 8V2a1 1 0 011-1h6" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/></svg>
+    </button>`;
+  card.insertAdjacentElement('afterend', wrap);
+}
+
+function cpName(nid) {
+  const input = document.getElementById(nid);
+  if (!input) return;
+  navigator.clipboard.writeText(input.value).then(() => toast('Product name copied'));
 }
 
 async function reprocessCard(slider) {
@@ -1007,6 +1041,7 @@ async function runExtract(urls) {
         const rawData = bgResult?.rawData ?? null;
         updateCard(card,final,final?'done':'error', rawData);
         if(final){done++;extractedImageUrls.push(final);succeeded=true;finalImgUrl=imgUrl;}
+        if(final) addNameField(card, labelFromUrl(urls[i]));
       } else updateCard(card,null,'error');
     } catch(e){updateCard(card,null,'error');}
     logResult(urls[i], succeeded, finalImgUrl);
