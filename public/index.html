@@ -301,7 +301,7 @@ hr{border:none;border-top:0.5px solid var(--border);margin:1.5rem 0;}
     <div class="settings-note">Studio Shoot uses AI image generation (~$0.04/generation). Powered by Gemini 2.5 Flash.</div>
     <div style="margin-top:10px;display:flex;justify-content:space-between;align-items:center;">
       <span style="font-size:10px;font-family:var(--mono);color:var(--muted2);">version</span>
-      <span style="font-size:10px;font-family:var(--mono);color:var(--muted);">v4.01</span>
+      <span style="font-size:10px;font-family:var(--mono);color:var(--muted);">v4.02</span>
     </div>
   </div>
 
@@ -1488,6 +1488,7 @@ Your task:
 Output only the final composite image.`;
 
   // Build parts: layout thumbnail first, then individual product cutouts
+  // Resize images to max 800px to keep payload under Vercel's limit
   const parts = [];
 
   if (canvasThumb) {
@@ -1496,12 +1497,13 @@ Output only the final composite image.`;
     });
   }
 
-  imageUrls.forEach(url => {
-    const data = url.replace(/^data:image\/\w+;base64,/, '');
+  for (const url of imageUrls) {
+    const resized = await resizeImageForGemini(url, 800);
+    const data = resized.replace(/^data:image\/\w+;base64,/, '');
     if (data.length > 10) {
-      parts.push({ inline_data: { mime_type: 'image/png', data } });
+      parts.push({ inline_data: { mime_type: 'image/jpeg', data } });
     }
-  });
+  }
 
   parts.push({ text: prompt });
 
@@ -1600,6 +1602,24 @@ async function exportStudioCanvasThumb() {
     console.warn('Canvas thumb export failed:', e);
     return null;
   }
+}
+
+// Resize image dataURL to max dimension for Gemini payload efficiency
+async function resizeImageForGemini(dataUrl, maxDim = 800) {
+  return new Promise(resolve => {
+    const img = new Image();
+    img.onload = () => {
+      const scale = Math.min(1, maxDim / Math.max(img.width, img.height));
+      const w = Math.round(img.width * scale);
+      const h = Math.round(img.height * scale);
+      const c = document.createElement('canvas');
+      c.width = w; c.height = h;
+      c.getContext('2d').drawImage(img, 0, 0, w, h);
+      resolve(c.toDataURL('image/jpeg', 0.88));
+    };
+    img.onerror = () => resolve(dataUrl);
+    img.src = dataUrl;
+  });
 }
 
 function dlStudio() {
