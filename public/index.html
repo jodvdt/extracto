@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Extracto</title>
+<title>Unboxd</title>
 <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Syne:wght@400;500;700&display=swap" rel="stylesheet">
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
@@ -11,8 +11,8 @@
   --bg:#0b0b0b;--surface:#141414;--surface2:#1c1c1c;--surface3:#222;
   --border:rgba(255,255,255,0.07);--border2:rgba(255,255,255,0.12);
   --text:#efefef;--muted:#777;--muted2:#444;
-  --accent:#c8f53a;--accent-dim:rgba(200,245,58,0.1);--accent-border:rgba(200,245,58,0.25);
-  --studio:#a78bfa;--studio-dim:rgba(167,139,250,0.1);--studio-border:rgba(167,139,250,0.3);
+  --accent:#1282A2;--accent-dim:rgba(18,130,162,0.1);--accent-border:rgba(18,130,162,0.35);
+  --studio:#A167A5;--studio-dim:rgba(161,103,165,0.12);--studio-border:rgba(161,103,165,0.35);
   --danger:#f55a5a;--success:#3af5a0;
   --font:'Syne',sans-serif;--mono:'DM Mono',monospace;--rad:10px;--rad-lg:16px;
 }
@@ -37,7 +37,7 @@ html,body{background:var(--bg);color:var(--text);font-family:var(--font);min-hei
 .settings-input{flex:1;background:var(--surface2);border:0.5px solid var(--border2);border-radius:7px;padding:8px 12px;color:var(--text);font-family:var(--mono);font-size:12px;outline:none;transition:border-color .2s;}
 .settings-input:focus{border-color:var(--accent-border);}
 .settings-input::placeholder{color:var(--muted2);}
-.save-btn{padding:7px 16px;background:var(--accent);border:none;border-radius:7px;color:#0b0b0b;font-family:var(--font);font-size:12px;font-weight:700;cursor:pointer;white-space:nowrap;}
+.save-btn{padding:7px 16px;background:var(--accent);border:none;border-radius:7px;color:#fff;font-family:var(--font);font-size:12px;font-weight:700;cursor:pointer;white-space:nowrap;}
 .save-btn:hover{opacity:.85;}
 .settings-note{font-size:11px;font-family:var(--mono);color:var(--muted);margin-top:10px;line-height:1.6;padding:8px 12px;background:var(--surface2);border-radius:6px;border-left:2px solid var(--accent-border);}
 
@@ -53,7 +53,7 @@ textarea.shake{animation:shake .35s ease;border-color:var(--danger);}
 .select-wrap{position:relative;flex:1;}
 select{width:100%;height:44px;background:var(--surface2);border:0.5px solid var(--border2);border-radius:var(--rad);padding:0 36px 0 13px;color:var(--text);font-family:var(--font);font-size:14px;cursor:pointer;appearance:none;-webkit-appearance:none;outline:none;}
 .select-arrow{position:absolute;right:12px;top:50%;transform:translateY(-50%);pointer-events:none;color:var(--muted);}
-.go-btn{height:44px;padding:0 22px;background:var(--accent);border:none;border-radius:var(--rad);color:#0b0b0b;font-family:var(--font);font-size:14px;font-weight:700;cursor:pointer;white-space:nowrap;transition:opacity .15s,transform .1s;flex-shrink:0;}
+.go-btn{height:44px;padding:0 22px;background:var(--accent);border:none;border-radius:var(--rad);color:#fff;font-family:var(--font);font-size:14px;font-weight:700;cursor:pointer;white-space:nowrap;transition:opacity .15s,transform .1s;flex-shrink:0;}
 .go-btn:hover{opacity:.84;}
 .go-btn:active{transform:scale(.97);}
 .go-btn:disabled{opacity:.35;cursor:not-allowed;transform:none;}
@@ -161,10 +161,89 @@ select{width:100%;height:44px;background:var(--surface2);border:0.5px solid var(
 
 hr{border:none;border-top:0.5px solid var(--border);margin:1.5rem 0;}
 .hidden{display:none!important;}
+
+/* Container border animation */
+@keyframes borderFill {
+  0%{background-position:0% 50%;}
+  100%{background-position:100% 50%;}
+}
+@keyframes gradientSpin {
+  0%{background-position:0% 50%;}
+  50%{background-position:100% 50%;}
+  100%{background-position:0% 50%;}
+}
+.container{transition:box-shadow .3s;}
+.container.loading-border{
+  border-radius:var(--rad-lg);
+  box-shadow:0 0 0 1.5px var(--accent);
+  animation:none;
+}
+.container.studio-loading-border{
+  border-radius:var(--rad-lg);
+  box-shadow:0 0 0 1.5px transparent;
+  background:linear-gradient(var(--bg),var(--bg)) padding-box,
+    linear-gradient(90deg,#A167A5,#1282A2,#A167A5) border-box;
+  border:1.5px solid transparent;
+  animation:gradientSpin 2s ease infinite;
+  background-size:200% 200%;
+}
+
+/* Password screen */
+#pw-screen{position:fixed;inset:0;background:var(--bg);z-index:9999;display:flex;align-items:center;justify-content:center;}
+.pw-box{width:100%;max-width:360px;padding:2.5rem;background:var(--surface);border:0.5px solid var(--border2);border-radius:var(--rad-lg);text-align:center;}
+.pw-logo{font-size:22px;font-weight:700;font-family:var(--font);margin-bottom:6px;letter-spacing:-0.4px;}
+.pw-sub{font-size:11px;font-family:var(--mono);color:var(--muted);margin-bottom:1.5rem;letter-spacing:.5px;}
+.pw-input{width:100%;height:42px;background:var(--surface2);border:0.5px solid var(--border2);border-radius:8px;padding:0 14px;color:var(--text);font-family:var(--mono);font-size:13px;outline:none;margin-bottom:10px;text-align:center;letter-spacing:2px;transition:border-color .2s;}
+.pw-input:focus{border-color:var(--accent-border);}
+.pw-input.pw-error{border-color:var(--danger);animation:shake .35s ease;}
+.pw-btn{width:100%;height:42px;background:var(--accent);border:none;border-radius:8px;color:#fff;font-family:var(--font);font-size:13px;font-weight:700;cursor:pointer;letter-spacing:.3px;}
+.pw-btn:hover{opacity:.85;}
+.pw-err{font-size:11px;font-family:var(--mono);color:var(--danger);margin-top:8px;height:16px;}
+
+/* Studio section purple tint */
+.studio-section{background:var(--surface);border:0.5px solid var(--studio-border);border-radius:var(--rad-lg);padding:1.25rem 1.5rem;margin-bottom:1rem;}
+.studio-section .field-label{color:var(--studio);}
+.studio-section .studio-generate-btn{background:var(--studio)!important;color:#fff!important;}
+.studio-section .studio-generate-btn:hover{opacity:.85;}
+.studio-section select,.studio-section .backdrop-opt{border-color:var(--studio-border)!important;}
+.studio-section .backdrop-opt.active{border-color:var(--studio)!important;color:var(--studio)!important;}
 </style>
 </head>
 <body>
-<div class="page"><div class="container">
+
+<!-- Password screen -->
+<div id="pw-screen">
+  <div class="pw-box">
+    <div class="pw-logo">Unboxd</div>
+    <div class="pw-sub">devote digital internal tool</div>
+    <input type="password" class="pw-input" id="pw-input" placeholder="••••••••••••••••••••"
+      onkeydown="if(event.key==='Enter')checkPw()" autocomplete="off">
+    <button class="pw-btn" onclick="checkPw()">Enter</button>
+    <div class="pw-err" id="pw-err"></div>
+  </div>
+</div>
+
+<script>
+(function(){
+  const PW = 'unboxingwithdevote';
+  const stored = sessionStorage.getItem('unboxd_auth');
+  if (stored === PW) document.getElementById('pw-screen').style.display = 'none';
+  window.checkPw = function() {
+    const val = document.getElementById('pw-input').value;
+    if (val === PW) {
+      sessionStorage.setItem('unboxd_auth', PW);
+      document.getElementById('pw-screen').style.display = 'none';
+    } else {
+      const inp = document.getElementById('pw-input');
+      inp.classList.add('pw-error');
+      document.getElementById('pw-err').textContent = 'incorrect password';
+      setTimeout(() => { inp.classList.remove('pw-error'); inp.value=''; }, 1000);
+    }
+  };
+})();
+</script>
+
+<div class="page"><div class="container" id="main-container">
 
   <!-- Header -->
   <div class="header">
@@ -178,12 +257,11 @@ hr{border:none;border-top:0.5px solid var(--border);margin:1.5rem 0;}
         </svg>
       </div>
       <div>
-        <div class="logo-name">Extracto</div>
-        <div class="logo-sub">Paste a brief or links. Get images.</div>
+        <div class="logo-name">Unboxd</div>
+        <div class="logo-sub">product images in one click</div>
       </div>
     </div>
     <div style="display:flex;gap:8px;align-items:center;">
-      <button id="debug-btn" onclick="toggleDebug()" style="height:28px;padding:0 10px;background:var(--surface);border:0.5px solid var(--border2);border-radius:6px;color:var(--muted);font-family:var(--mono);font-size:10px;cursor:pointer;transition:all .15s;letter-spacing:.5px;">DEBUG</button>
       <button class="cog-btn" onclick="toggleSettings()">
         <svg width="15" height="15" viewBox="0 0 15 15" fill="none">
           <circle cx="7.5" cy="7.5" r="2" stroke="currentColor" stroke-width="1.2"/>
@@ -200,13 +278,20 @@ hr{border:none;border-top:0.5px solid var(--border);margin:1.5rem 0;}
       <input type="password" class="settings-input" id="gemini-key-input" placeholder="AIzaSy..." autocomplete="off">
       <button class="save-btn" onclick="saveKeys()">Save</button>
     </div>
-    <div class="settings-note">Saved to your browser only. Used for smart layout detection and image extraction from tricky sites. Free tier — no image generation needed.</div>
+    <div class="settings-row" style="margin-top:8px;">
+      <span class="settings-lbl">Verbose log</span>
+      <div style="display:flex;align-items:center;gap:8px;flex:1;">
+        <button id="verbose-toggle" onclick="toggleVerbose()" style="height:28px;padding:0 12px;background:var(--surface2);border:0.5px solid var(--border2);border-radius:6px;color:var(--muted);font-family:var(--mono);font-size:10px;cursor:pointer;transition:all .15s;letter-spacing:.3px;">OFF</button>
+        <span style="font-size:10px;font-family:var(--mono);color:var(--muted2);">show detailed extraction log</span>
+      </div>
+    </div>
+    <div class="settings-note">API key saved to your browser only. Used for Studio Shoot image generation (~$0.04/generation) and smart layout detection.</div>
   </div>
 
   <!-- Input -->
   <div class="input-card">
     <label class="field-label" for="brief">Brief or links</label>
-    <textarea id="brief" placeholder="Paste your brief, product URLs, or a mix of both. Extracto handles the rest.
+    <textarea id="brief" placeholder="Paste your brief, product URLs, or a mix of both. Unboxd handles the rest.
 
 e.g.
 Summer sale — grab images for these:
@@ -215,9 +300,9 @@ https://anysite.com/product/item-two"></textarea>
     <div class="controls">
       <div class="select-wrap">
         <select id="mode" onchange="updateHint()">
-          <option value="transparent">Transparent background images</option>
-          <option value="bundle">Bundle image</option>
-          <option value="studio">Studio Shoot</option>
+          <option value="transparent">Product Isolator</option>
+          <option value="bundle">Product Bundler</option>
+          <option value="studio">Product Studio Shoot ✨</option>
         </select>
         <div class="select-arrow">
           <svg width="11" height="11" viewBox="0 0 11 11" fill="none"><path d="M1.5 3.5L5.5 7.5L9.5 3.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
@@ -334,7 +419,7 @@ https://anysite.com/product/item-two"></textarea>
 
 </div>
   <div style="text-align:center;margin-top:3rem;font-size:10px;font-family:'DM Mono',monospace;color:#333;letter-spacing:.5px;">
-    Extracto v3.8 &mdash; brewed by Jonas for Devote Digital</div>
+    Unboxd &copy; 2026 Jonas Tavarro</div>
 </div>
 
 <script>
@@ -359,13 +444,27 @@ function toggleSettings() {
   if (!p.classList.contains('hidden')) {
     const k = getKey();
     if (k) document.getElementById('gemini-key-input').value = k;
+    // Sync verbose toggle state
+    const vb = document.getElementById('verbose-toggle');
+    if(vb){ vb.textContent = debugMode ? 'ON' : 'OFF'; vb.style.background = debugMode ? 'var(--accent)' : 'var(--surface2)'; vb.style.color = debugMode ? '#fff' : 'var(--muted)'; vb.style.borderColor = debugMode ? 'transparent' : 'var(--border2)'; }
   }
+}
+
+function toggleVerbose() {
+  debugMode = !debugMode;
+  const btn = document.getElementById('verbose-toggle');
+  btn.textContent = debugMode ? 'ON' : 'OFF';
+  btn.style.background = debugMode ? 'var(--accent)' : 'var(--surface2)';
+  btn.style.color = debugMode ? '#fff' : 'var(--muted)';
+  btn.style.borderColor = debugMode ? 'transparent' : 'var(--border2)';
+  const panel = document.getElementById('pipeline');
+  panel.style.maxHeight = debugMode ? '300px' : '110px';
 }
 
 // ── Toast ──────────────────────────────────────────────────────────────────────
 function toast(msg) {
   const t = document.createElement('div');
-  t.style.cssText = 'position:fixed;bottom:2rem;left:50%;transform:translateX(-50%);background:#1c1c1c;border:0.5px solid rgba(200,245,58,.3);color:#c8f53a;font-family:"DM Mono",monospace;font-size:12px;padding:8px 18px;border-radius:8px;z-index:999;pointer-events:none;';
+  t.style.cssText = 'position:fixed;bottom:2rem;left:50%;transform:translateX(-50%);background:#1c1c1c;border:0.5px solid rgba(18,130,162,.4);color:#1282A2;font-family:"DM Mono",monospace;font-size:12px;padding:8px 18px;border-radius:8px;z-index:999;pointer-events:none;';
   t.textContent = msg;
   document.body.appendChild(t);
   setTimeout(() => t.remove(), 2000);
@@ -376,9 +475,17 @@ function updateHint() {
   const m = document.getElementById('mode').value;
   document.getElementById('hint').textContent = {
     transparent: 'Extracts the main product image from each link and removes the background.',
-    bundle: 'Extracts product images and arranges them on an editable canvas.',
-    studio: 'Extracts product images then renders a studio-style composite.'
+    bundle: 'Extracts product images and arranges them on an editable bundle canvas.',
+    studio: 'Extracts product images, arrange them, then generate a photoreal studio shot with AI.'
   }[m];
+}
+
+// ── Container border animation ─────────────────────────────────────────────────
+function setContainerBorder(state) {
+  const c = document.getElementById('main-container');
+  c.classList.remove('loading-border','studio-loading-border');
+  if (state === 'loading') c.classList.add('loading-border');
+  else if (state === 'studio') c.classList.add('studio-loading-border');
 }
 
 // ── Status ─────────────────────────────────────────────────────────────────────
@@ -387,24 +494,16 @@ function setSt(state, msg) {
   const dot = document.getElementById('sdot');
   bar.classList.remove('hidden','active','done','err','studio-active');
   dot.className = 'sdot';
-  if (state==='loading'){bar.classList.add('active');dot.classList.add('pulse');}
-  else if (state==='studio'){bar.classList.add('studio-active');dot.classList.add('studio-pulse');}
-  else if (state==='done'){bar.classList.add('done');dot.classList.add('done');}
-  else if (state==='error'){bar.classList.add('err');dot.classList.add('err');}
+  if (state==='loading'){bar.classList.add('active');dot.classList.add('pulse');setContainerBorder('loading');}
+  else if (state==='studio'){bar.classList.add('studio-active');dot.classList.add('studio-pulse');setContainerBorder('studio');}
+  else if (state==='done'){bar.classList.add('done');dot.classList.add('done');setContainerBorder(null);}
+  else if (state==='error'){bar.classList.add('err');dot.classList.add('err');setContainerBorder(null);}
   document.getElementById('stxt').textContent = msg;
 }
 
-// ── Debug mode ─────────────────────────────────────────────────────────────────
+// ── Debug mode (legacy toggle, now via settings) ────────────────────────────────
 let debugMode = false;
-function toggleDebug() {
-  debugMode = !debugMode;
-  const btn = document.getElementById('debug-btn');
-  const panel = document.getElementById('pipeline');
-  btn.style.background = debugMode ? 'var(--accent)' : 'var(--surface)';
-  btn.style.color = debugMode ? '#0b0b0b' : 'var(--muted)';
-  btn.style.borderColor = debugMode ? 'transparent' : 'var(--border2)';
-  panel.style.maxHeight = debugMode ? '300px' : '110px';
-}
+function toggleDebug() { toggleVerbose(); }
 
 // ── Log ────────────────────────────────────────────────────────────────────────
 let fullLog = []; // store all log entries for copy
@@ -878,13 +977,13 @@ function createCard(label) {
     </div>
     <div class="clbl">${label}</div>
     <div class="tol-bar" style="position:absolute;bottom:24px;left:0;right:0;padding:0 10px;display:none;align-items:center;gap:5px;z-index:5;">
-      <span style="font-size:9px;font-family:'DM Mono',monospace;color:rgba(200,245,58,0.7);white-space:nowrap;">bg</span>
+      <span style="font-size:9px;font-family:'DM Mono',monospace;color:rgba(18,130,162,0.8);white-space:nowrap;">bg</span>
       <input type="range" min="0" max="100" value="40" step="1"
-        style="flex:1;cursor:pointer;accent-color:#c8f53a;height:3px;"
+        style="flex:1;cursor:pointer;accent-color:var(--accent);height:3px;"
         oninput="document.getElementById('${uid}').textContent=this.value"
         onmouseup="reprocessCard(this)"
         ontouchend="reprocessCard(this)">
-      <span id="${uid}" style="font-size:9px;font-family:'DM Mono',monospace;color:#c8f53a;min-width:20px;text-align:right;">40</span>
+      <span id="${uid}" style="font-size:9px;font-family:'DM Mono',monospace;color:var(--accent);min-width:20px;text-align:right;">40</span>
     </div>
     <div class="pname-wrap" style="display:none;align-items:center;gap:6px;padding:6px 8px;background:var(--surface);border-top:0.5px solid var(--border2);">
       <input id="${nid}" type="text" value=""
