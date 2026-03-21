@@ -1,3 +1,11 @@
+export const config = {
+  api: {
+    bodyParser: {
+      sizeLimit: '50mb',
+    },
+  },
+};
+
 export default async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
@@ -21,11 +29,20 @@ export default async function handler(req, res) {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(body),
-        signal: AbortSignal.timeout(60000),
+        signal: AbortSignal.timeout(120000), // 2 min timeout for image gen
       }
     );
 
-    const data = await geminiRes.json();
+    // Always try to parse as JSON
+    const text = await geminiRes.text();
+    let data;
+    try {
+      data = JSON.parse(text);
+    } catch(e) {
+      // Response wasn't JSON -- return it wrapped
+      res.status(500).json({ error: `Gemini returned non-JSON: ${text.slice(0, 200)}` });
+      return;
+    }
 
     if (!geminiRes.ok) {
       res.status(geminiRes.status).json({ error: data.error?.message || `Gemini error ${geminiRes.status}` });
