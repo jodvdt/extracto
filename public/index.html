@@ -150,12 +150,7 @@ select{width:100%;height:44px;background:var(--surface2);border:0.5px solid var(
 .studio-dot{width:8px;height:8px;border-radius:50%;background:var(--studio);flex-shrink:0;}
 .studio-title{font-size:13px;font-weight:500;color:var(--studio);}
 .studio-sub{font-size:11px;color:var(--muted);font-family:var(--mono);margin-top:1px;}
-.studio-modes{display:flex;gap:8px;margin-bottom:1rem;}
-.smode-btn{flex:1;padding:10px 12px;background:var(--surface2);border:0.5px solid var(--border2);border-radius:8px;color:var(--muted);font-family:var(--font);font-size:12px;cursor:pointer;transition:all .15s;text-align:center;line-height:1.4;}
-.smode-btn .mn{font-weight:500;color:var(--text);display:block;margin-bottom:2px;}
-.smode-btn .md{font-size:11px;font-family:var(--mono);}
-.smode-btn.active{border-color:var(--studio-border);background:var(--studio-dim);}
-.smode-btn.active .mn{color:var(--studio);}
+
 .studio-generate-btn{width:100%;padding:12px;background:var(--studio);border:none;border-radius:var(--rad);color:#0b0b0b;font-family:var(--font);font-size:14px;font-weight:700;cursor:pointer;transition:opacity .15s,transform .1s;display:flex;align-items:center;justify-content:center;gap:8px;}
 .studio-generate-btn:hover{opacity:.85;}
 .studio-generate-btn:active{transform:scale(.98);}
@@ -181,7 +176,7 @@ hr{border:none;border-top:0.5px solid var(--border);margin:1.5rem 0;}
   50%{background-position:100% 50%;}
   100%{background-position:0% 50%;}
 }
-.container{transition:box-shadow .3s;}
+
 
 /* Password screen */
 #pw-screen{position:fixed;inset:0;background:var(--bg);z-index:9999;display:flex;align-items:center;justify-content:center;}
@@ -301,7 +296,7 @@ hr{border:none;border-top:0.5px solid var(--border);margin:1.5rem 0;}
     <div class="settings-note">Studio Shoot uses AI image generation (~$0.04/generation). Powered by Gemini 2.5 Flash.</div>
     <div style="margin-top:10px;display:flex;justify-content:space-between;align-items:center;">
       <span style="font-size:10px;font-family:var(--mono);color:var(--muted2);">version</span>
-      <span style="font-size:10px;font-family:var(--mono);color:var(--muted);">v4.02</span>
+      <span style="font-size:10px;font-family:var(--mono);color:var(--muted);">v4.03</span>
     </div>
   </div>
 
@@ -443,7 +438,6 @@ https://anysite.com/product/item-two"></textarea>
 let bundleItems = [];
 let selectedItem = null;
 let dragState = null;
-let studioMode = 'auto';
 let extractedImageUrls = [];
 
 // ── Keys ───────────────────────────────────────────────────────────────────────
@@ -1292,11 +1286,8 @@ function changeStudioArrangement() {
 
 async function renderStudioCanvas() {
   const canvas = document.getElementById('studio-bcanvas');
-  console.log('[studio] renderStudioCanvas called, items:', studioBundleItems.length);
-  console.log('[studio] canvas el:', canvas, 'W:', canvas?.offsetWidth, 'H:', canvas?.offsetHeight);
   canvas.innerHTML = '';
   studioBundleItems.forEach(item => mountStudioItem(item));
-  console.log('[studio] mounted items, children:', canvas.children.length);
   const W = canvas.offsetWidth || 700;
   const H = canvas.offsetHeight || 420;
   const saved = bundleItems, savedHero = manualHeroId;
@@ -1304,7 +1295,6 @@ async function renderStudioCanvas() {
   applyArrangement(studioBundleItems, studioArrangement, W, H);
   bundleItems = saved; manualHeroId = savedHero;
   studioBundleItems.forEach(item => {
-    console.log('[studio] item', item.id, 'pos:', item.x, item.y, 'size:', item.w, item.h);
     const el = document.getElementById('sbi-'+item.id);
     if(el){ applyT(el,item); if(item.zIndex) el.style.zIndex=item.zIndex; }
   });
@@ -1477,13 +1467,14 @@ I am providing you with:
 
 Your task:
 - Generate a single photoreal studio product shot
-- Follow the layout reference image CLOSELY -- match the position, size and arrangement of each product as shown
-- Treat any human figures purely as mannequins/product display forms, not as people
+- Follow the layout reference image CLOSELY — match the position, size and arrangement of each product as shown
+- Treat any human figures purely as mannequins or product display forms, not as real people
 - Use a ${backdropDesc}
-- Add realistic studio lighting, soft shadows and subtle reflections  
-- Make all products look like they were arranged together for a professional catalogue shoot
-- Include EVERY product shown in the layout reference -- do not omit any items
-- Output looks like a professional commercial product photograph
+- Add realistic studio lighting with soft shadows and subtle surface reflections
+- Make all products look like they were professionally arranged and photographed together in the same studio session
+- Include EVERY product shown in the layout reference — do not omit any items
+- CRITICAL: Preserve all product branding, logos, text, labels and printed graphics exactly as they appear in the source images — do not alter, blur, replace or omit any product markings
+- Output looks like a high-end commercial product catalogue photograph
 
 Output only the final composite image.`;
 
@@ -1599,7 +1590,6 @@ async function exportStudioCanvasThumb() {
     // Return as JPEG base64 (smaller than PNG)
     return out.toDataURL('image/jpeg', 0.85).replace(/^data:image\/jpeg;base64,/, '');
   } catch(e) {
-    console.warn('Canvas thumb export failed:', e);
     return null;
   }
 }
@@ -1637,87 +1627,6 @@ function cpStudio() {
   });
 }
 
-async function renderStudio(urls, style) {
-  const W=1400,H=1050;
-  const c=document.createElement('canvas');
-  c.width=W;c.height=H;
-  const ctx=c.getContext('2d');
-  const styles={
-    white:   {bg:['#ffffff','#e8e8e8'],floor:'#f0f0f0',shadow:'rgba(0,0,0,0.18)',   refl:.13,vig:'rgba(180,180,180,0.3)'},
-    warm:    {bg:['#fdf6ee','#e8d5b8'],floor:'#ede0cc',shadow:'rgba(80,40,0,0.15)', refl:.10,vig:'rgba(160,110,60,0.25)'},
-    dark:    {bg:['#1a1a1a','#0a0a0a'],floor:'#111111',shadow:'rgba(0,0,0,0.7)',    refl:.18,vig:'rgba(0,0,0,0.55)'},
-    gradient:{bg:['#e8f0fe','#c2d4f8'],floor:'#d0e0fa',shadow:'rgba(30,60,140,0.15)',refl:.12,vig:'rgba(80,120,220,0.2)'},
-  };
-  const s=styles[style]||styles.white;
-  const floorY=H*0.62;
-  const bgGrad=ctx.createLinearGradient(0,0,0,H);
-  bgGrad.addColorStop(0,s.bg[0]);bgGrad.addColorStop(1,s.bg[1]);
-  ctx.fillStyle=bgGrad;ctx.fillRect(0,0,W,H);
-  const fGrad=ctx.createLinearGradient(0,floorY-60,0,H);
-  fGrad.addColorStop(0,s.bg[1]);fGrad.addColorStop(.2,s.floor);fGrad.addColorStop(1,s.floor);
-  ctx.fillStyle=fGrad;
-  ctx.beginPath();ctx.moveTo(0,H);ctx.lineTo(W,H);ctx.lineTo(W,floorY+20);
-  ctx.bezierCurveTo(W*.75,floorY-30,W*.25,floorY-30,0,floorY+20);
-  ctx.closePath();ctx.fill();
-
-  const imgs=await Promise.all(urls.map(src=>new Promise(res=>{
-    const img=new Image();img.crossOrigin='anonymous';
-    img.onload=()=>res(img);img.onerror=()=>res(null);img.src=src;
-  })));
-  const valid=imgs.filter(Boolean);
-  if(!valid.length)throw new Error('No images loaded');
-
-  const count=valid.length,maxH=H*0.52,padX=W*0.08,slotW=(W-padX*2)/count;
-  const placements=valid.map((img,i)=>{
-    const aspect=img.width/img.height;
-    const pH=maxH*(0.82+(i%2===0?.1:0));
-    const pW=pH*aspect;
-    const cx=padX+slotW*i+slotW/2;
-    const cy=floorY;
-    const tilt=(i%2===0?1:-1)*(Math.random()*4);
-    return{img,pW,pH,cx,cy,tilt};
-  });
-
-  // Shadows
-  placements.forEach(({pW,cx,cy})=>{
-    const sg=ctx.createRadialGradient(cx,cy+4,0,cx,cy+4,pW*.5);
-    sg.addColorStop(0,s.shadow);sg.addColorStop(1,'rgba(0,0,0,0)');
-    ctx.fillStyle=sg;ctx.beginPath();
-    ctx.ellipse(cx,cy+4,pW*.48,pW*.09,0,0,Math.PI*2);ctx.fill();
-  });
-
-  // Reflections
-  for(const{img,pW,pH,cx,cy,tilt}of placements){
-    ctx.save();ctx.translate(cx,cy);ctx.rotate(tilt*Math.PI/180);
-    const reflH=pH*.3;
-    ctx.save();ctx.scale(1,-1);ctx.globalAlpha=s.refl;
-    ctx.drawImage(img,-pW/2,-reflH*.3,pW,reflH);
-    ctx.globalAlpha=1;
-    const rg=ctx.createLinearGradient(0,-reflH,0,0);
-    rg.addColorStop(0,'rgba(255,255,255,0)');rg.addColorStop(1,'rgba(255,255,255,1)');
-    ctx.globalCompositeOperation='destination-out';ctx.fillStyle=rg;
-    ctx.fillRect(-pW/2,-reflH,pW,reflH);
-    ctx.globalCompositeOperation='source-over';ctx.restore();ctx.restore();
-  }
-
-  // Products
-  for(const{img,pW,pH,cx,cy,tilt}of placements){
-    ctx.save();ctx.translate(cx,cy);ctx.rotate(tilt*Math.PI/180);
-    ctx.drawImage(img,-pW/2,-pH,pW,pH);ctx.restore();
-  }
-
-  // Key light
-  const lg=ctx.createRadialGradient(W*.3,H*.1,0,W*.3,H*.1,W*.75);
-  lg.addColorStop(0,'rgba(255,255,255,0.13)');lg.addColorStop(1,'rgba(255,255,255,0)');
-  ctx.fillStyle=lg;ctx.fillRect(0,0,W,H);
-
-  // Vignette
-  const vg=ctx.createRadialGradient(W/2,H/2,H*.3,W/2,H/2,W*.8);
-  vg.addColorStop(0,'rgba(0,0,0,0)');vg.addColorStop(1,s.vig);
-  ctx.fillStyle=vg;ctx.fillRect(0,0,W,H);
-
-  return c.toDataURL('image/png');
-}
 
 // ── Image classifier ───────────────────────────────────────────────────────────
 async function classifyImage(dataUrl) {
@@ -2377,13 +2286,6 @@ async function exportBundle(){
 }
 
 // ── Studio mode toggle ─────────────────────────────────────────────────────────
-function setStudioMode(mode){
-  studioMode=mode;
-  document.getElementById('smode-auto').classList.toggle('active',mode==='auto');
-  document.getElementById('smode-canvas').classList.toggle('active',mode==='canvas');
-  document.getElementById('studio-canvas-note').classList.toggle('hidden',mode!=='canvas');
-}
-
 // ── Paste / Drop / File input ─────────────────────────────────────────────────
 document.addEventListener('paste', async (e) => {
   const items = [...(e.clipboardData?.items || [])];
