@@ -47,7 +47,7 @@ html,body{background:var(--bg);color:var(--text);font-family:var(--font);min-hei
   border-color:var(--accent);
   box-shadow:0 0 0 1px var(--accent), 0 0 18px 2px rgba(18,130,162,0.35), 0 0 40px 4px rgba(18,130,162,0.12);
 }
-.input-card.studio-glow{
+#studio-section.studio-glow{
   border-color:var(--studio);
   box-shadow:0 0 0 1px var(--studio), 0 0 18px 2px rgba(161,103,165,0.4), 0 0 40px 4px rgba(161,103,165,0.15);
   animation:studioGlowPulse 2s ease-in-out infinite;
@@ -294,7 +294,7 @@ hr{border:none;border-top:0.5px solid var(--border);margin:1.5rem 0;}
     <div class="settings-note">Studio Shoot uses AI image generation (~$0.04/generation). Powered by Gemini 2.5 Flash.</div>
     <div style="margin-top:10px;display:flex;justify-content:space-between;align-items:center;">
       <span style="font-size:10px;font-family:var(--mono);color:var(--muted2);">version</span>
-      <span style="font-size:10px;font-family:var(--mono);color:var(--muted);">v4.04</span>
+      <span style="font-size:10px;font-family:var(--mono);color:var(--muted);">v4.05</span>
     </div>
   </div>
 
@@ -1425,7 +1425,10 @@ async function runStudioShoot() {
   btn.disabled = true;
   document.getElementById('studio-loading').classList.remove('hidden');
   document.getElementById('studio-result').classList.add('hidden');
-  setSt('loading','Generating studio shot...');
+  setSt('studio','Generating studio shot...');
+
+  // Scroll to studio section so designer can watch the progress
+  document.getElementById('studio-section').scrollIntoView({ behavior: 'smooth', block: 'start' });
 
   // Progress bar animation
   let prog = 0;
@@ -1440,6 +1443,8 @@ async function runStudioShoot() {
       document.getElementById('studio-result').classList.remove('hidden');
       document.getElementById('studio-loading').classList.add('hidden');
       setSt('done','Studio shot ready');
+      // Scroll to result
+      document.getElementById('studio-result').scrollIntoView({ behavior: 'smooth', block: 'start' });
     }, 400);
   } catch(e) {
     clearInterval(ticker);
