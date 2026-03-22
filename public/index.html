@@ -145,8 +145,12 @@ select{width:100%;height:44px;background:var(--surface2);border:0.5px solid var(
 .cbtn.primary:hover{opacity:.85;color:#0b0b0b;}
 
 /* Studio */
-.studio-section{background:var(--surface);border:0.5px solid var(--studio-border);border-radius:var(--rad-lg);padding:1.25rem 1.5rem;margin-bottom:1rem;}
-.studio-header{display:flex;align-items:center;gap:10px;margin-bottom:1rem;}
+.studio-section{background:var(--surface);border:0.5px solid var(--studio-border);border-radius:var(--rad-lg);padding:1.25rem 1.5rem;margin-bottom:1rem;transition:box-shadow .3s,border-color .3s;}
+.studio-section .field-label{color:var(--studio);}
+.studio-section .studio-generate-btn{background:var(--studio)!important;color:#fff!important;}
+.studio-section .studio-generate-btn:hover{opacity:.85;}
+.studio-section select,.studio-section .backdrop-opt{border-color:var(--studio-border)!important;}
+.studio-section .backdrop-opt.active{border-color:var(--studio)!important;color:var(--studio)!important;}
 .studio-dot{width:8px;height:8px;border-radius:50%;background:var(--studio);flex-shrink:0;}
 .studio-title{font-size:13px;font-weight:500;color:var(--studio);}
 .studio-sub{font-size:11px;color:var(--muted);font-family:var(--mono);margin-top:1px;}
@@ -190,13 +194,7 @@ hr{border:none;border-top:0.5px solid var(--border);margin:1.5rem 0;}
 .pw-btn:hover{opacity:.85;}
 .pw-err{font-size:11px;font-family:var(--mono);color:var(--danger);margin-top:8px;height:16px;}
 
-/* Studio section purple tint */
-.studio-section{background:var(--surface);border:0.5px solid var(--studio-border);border-radius:var(--rad-lg);padding:1.25rem 1.5rem;margin-bottom:1rem;}
-.studio-section .field-label{color:var(--studio);}
-.studio-section .studio-generate-btn{background:var(--studio)!important;color:#fff!important;}
-.studio-section .studio-generate-btn:hover{opacity:.85;}
-.studio-section select,.studio-section .backdrop-opt{border-color:var(--studio-border)!important;}
-.studio-section .backdrop-opt.active{border-color:var(--studio)!important;color:var(--studio)!important;}
+/* Studio section purple tint applied via base .studio-section rule above */
 </style>
 </head>
 <body>
@@ -296,7 +294,7 @@ hr{border:none;border-top:0.5px solid var(--border);margin:1.5rem 0;}
     <div class="settings-note">Studio Shoot uses AI image generation (~$0.04/generation). Powered by Gemini 2.5 Flash.</div>
     <div style="margin-top:10px;display:flex;justify-content:space-between;align-items:center;">
       <span style="font-size:10px;font-family:var(--mono);color:var(--muted2);">version</span>
-      <span style="font-size:10px;font-family:var(--mono);color:var(--muted);">v4.03</span>
+      <span style="font-size:10px;font-family:var(--mono);color:var(--muted);">v4.04</span>
     </div>
   </div>
 
@@ -528,11 +526,18 @@ function updateHint() {
 
 // ── Container border animation ─────────────────────────────────────────────────
 function setContainerBorder(state) {
-  const c = document.querySelector('.input-card');
-  if (!c) return;
-  c.classList.remove('loading-glow','studio-glow');
-  if (state === 'loading') c.classList.add('loading-glow');
-  else if (state === 'studio') c.classList.add('studio-glow');
+  const inputCard = document.querySelector('.input-card');
+  const studioSection = document.getElementById('studio-section');
+  // Always clear both first
+  if (inputCard) inputCard.classList.remove('loading-glow', 'studio-glow');
+  if (studioSection) studioSection.classList.remove('loading-glow', 'studio-glow');
+
+  if (state === 'loading') {
+    if (inputCard) inputCard.classList.add('loading-glow');
+  } else if (state === 'studio') {
+    // Glow on studio section, not input card
+    if (studioSection) studioSection.classList.add('studio-glow');
+  }
 }
 
 // ── Status ─────────────────────────────────────────────────────────────────────
