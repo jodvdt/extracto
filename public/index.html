@@ -294,7 +294,7 @@ hr{border:none;border-top:0.5px solid var(--border);margin:1.5rem 0;}
     <div class="settings-note">Studio Shoot uses AI image generation (~$0.04/generation). Powered by Gemini 2.5 Flash.</div>
     <div style="margin-top:10px;display:flex;justify-content:space-between;align-items:center;">
       <span style="font-size:10px;font-family:var(--mono);color:var(--muted2);">version</span>
-      <span style="font-size:10px;font-family:var(--mono);color:var(--muted);">v4.05</span>
+      <span style="font-size:10px;font-family:var(--mono);color:var(--muted);">v4.06</span>
     </div>
   </div>
 
@@ -1191,6 +1191,7 @@ async function runExtract(urls) {
   document.getElementById('extract-results').classList.remove('hidden');
   const grid = document.getElementById('extract-grid');
   let done = 0;
+  let scrolled = false;
   for (let i=0;i<urls.length;i++) {
     setSt('loading',`Processing ${i+1} of ${urls.length}...`);
     logSection(urls[i]);
@@ -1199,6 +1200,11 @@ async function runExtract(urls) {
     wrap.className = 'img-card-wrap';
     wrap.appendChild(card);
     grid.appendChild(wrap);
+    // Scroll to results on first card
+    if (!scrolled) {
+      document.getElementById('extract-results').scrollIntoView({ behavior: 'smooth', block: 'start' });
+      scrolled = true;
+    }
     let succeeded = false;
     let finalImgUrl = null;
     try {
@@ -1238,6 +1244,7 @@ async function runBundle(urls) {
     } catch(e){}
   }
   await renderBundleCanvas();
+  document.getElementById('bundle-results').scrollIntoView({ behavior: 'smooth', block: 'start' });
   setSt('done',`Bundle ready — ${bundleItems.length} product${bundleItems.length!==1?'s':''}`);
 }
 
